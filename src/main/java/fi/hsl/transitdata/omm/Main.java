@@ -12,6 +12,7 @@ import fi.hsl.common.config.ConfigParser;
 import fi.hsl.common.config.ConfigUtils;
 import fi.hsl.common.pulsar.PulsarApplication;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
+import fi.hsl.transitdata.omm.db.OmmDbConnector;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,7 @@ public class Main {
 
             final PulsarApplication app = PulsarApplication.newInstance(config);
             final PulsarApplicationContext context = app.getContext();
-            final OmmAlertConnector omm = OmmAlertConnector.newInstance(context, connectionString);
+            final OmmDbConnector omm = OmmDbConnector.newInstance(context, connectionString);
             final OmmAlertHandler alerter = new OmmAlertHandler(app.getContext(), omm.getBulletinDAO(), omm.getRouteDAO(), omm.getStopDAO());
 
             final int pollIntervalInSeconds = config.getInt("omm.interval");
