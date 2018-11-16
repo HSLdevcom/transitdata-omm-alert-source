@@ -1,5 +1,7 @@
 package fi.hsl.transitdata.omm.models;
 
+import com.google.transit.realtime.GtfsRealtime;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -25,16 +27,24 @@ public class Bulletin {
                 default: throw new IllegalArgumentException("Could not parse category from String: " + str);
             }
         }
+        //TODO DEFINE
+        public GtfsRealtime.Alert.Cause toGtfsCause() {
+            switch (this) {
+                case EarlierDisruption: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                default: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+            }
+        }
     }
 
     public enum Language {
-        FI, EN, SV
+        //Let's define these already in BCP-47 format, so .toString() works
+        fi, en, sv
     }
-    public static class LocalizedText {
+    /*public static class LocalizedText {
         public Language language;
         public String title;
         public String text;
-    }
+    }*/
 
     public long id;
     public Category category;
@@ -45,8 +55,11 @@ public class Bulletin {
     public boolean affectsAllStops;
     public List<Long> affectedRouteIds;
     public List<Long> affectedStopIds;
-    public LocalizedText textFi;
-    public LocalizedText textEn;
-    public LocalizedText textSv;
+    public GtfsRealtime.TranslatedString descriptions;
+    public GtfsRealtime.TranslatedString headers;
+
+    //public LocalizedText textFi;
+    //public LocalizedText textEn;
+    //public LocalizedText textSv;
 
 }

@@ -1,5 +1,6 @@
 package fi.hsl.transitdata.omm.db;
 
+import static com.google.transit.realtime.GtfsRealtime.*;
 import fi.hsl.transitdata.omm.models.Bulletin;
 
 import java.sql.Connection;
@@ -52,15 +53,18 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
             bulletin.affectsAllStops = resultSet.getInt("affects_all_stops") > 0;
             bulletin.affectedRouteIds = parseListFromCommaSeparatedString(resultSet.getString("affected_route_ids"));
             bulletin.affectedStopIds = parseListFromCommaSeparatedString(resultSet.getString("affected_stop_ids"));
-            bulletin.textFi = parseLocalization(resultSet, Bulletin.Language.FI);
-            bulletin.textEn = parseLocalization(resultSet, Bulletin.Language.EN);
-            bulletin.textSv = parseLocalization(resultSet, Bulletin.Language.SV);
-
+            bulletin.descriptions = parseDescriptions(resultSet);
+            bulletin.headers = parseTitles(resultSet);
+            /*bulletin.textFi = parseLocalization(resultSet, Bulletin.Language.fi);
+            bulletin.textEn = parseLocalization(resultSet, Bulletin.Language.en);
+            bulletin.textSv = parseLocalization(resultSet, Bulletin.Language.sv);
+*/
             bulletins.add(bulletin);
         }
         return bulletins;
     }
 
+    /*
     Bulletin.LocalizedText parseLocalization(ResultSet resultSet, Bulletin.Language language) throws SQLException {
         String columnSuffix = "";
         switch (language) {
@@ -83,6 +87,44 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
         localization.title = title;
         localization.text = text;
         return localization;
+    }*/
+    TranslatedString parseTitles(ResultSet resultSet) throws SQLException {
+        return parseText(resultSet,"title_");
+    }
+
+    TranslatedString parseDescriptions(ResultSet resultSet) throws SQLException {
+        return parseText(resultSet,"text_");
+    }
+
+    private TranslatedString parseText(final ResultSet resultSet, final String columnPrefix) throws SQLException {
+        TranslatedString.Builder builder = TranslatedString.newBuilder();
+
+        String[] suffixes = {Bulletin.Language.en.toString(), Bulletin.Language.fi.toString(), Bulletin.Language.sv.toString()};
+        for (String language: suffixes) {
+            String text = resultSet.getString(columnPrefix + language);
+            TranslatedString.Translation translation = TranslatedString.Translation.newBuilder()
+                    .setText(text)
+                    .setLanguage(language).build();
+
+            builder.addTranslation(translation);
+        }
+        return builder.build();
+        /*
+        Arrays.stream(suffixes).map(languageCode -> {
+
+            builder.addTranslation()
+        }).collect(Collectors.toList());
+
+
+
+        String title = resultSet.getString("title" + columnSuffix);
+        String text = resultSet.getString("text" + columnSuffix);
+
+        Bulletin.LocalizedText localization = new Bulletin.LocalizedText();
+        localization.language = language;
+        localization.title = title;
+        localization.text = text;
+        return localization;*/
     }
 
     List<Long> parseListFromCommaSeparatedString(String value) {
