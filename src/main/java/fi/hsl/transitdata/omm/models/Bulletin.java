@@ -40,11 +40,6 @@ public class Bulletin {
         //Let's define these already in BCP-47 format, so .toString() works
         fi, en, sv
     }
-    /*public static class LocalizedText {
-        public Language language;
-        public String title;
-        public String text;
-    }*/
 
     public long id;
     public Category category;
@@ -57,9 +52,5 @@ public class Bulletin {
     public List<Long> affectedStopIds;
     public GtfsRealtime.TranslatedString descriptions;
     public GtfsRealtime.TranslatedString headers;
-
-    //public LocalizedText textFi;
-    //public LocalizedText textEn;
-    //public LocalizedText textSv;
 
 }

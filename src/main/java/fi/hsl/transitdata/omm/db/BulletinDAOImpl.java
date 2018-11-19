@@ -55,39 +55,12 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
             bulletin.affectedStopIds = parseListFromCommaSeparatedString(resultSet.getString("affected_stop_ids"));
             bulletin.descriptions = parseDescriptions(resultSet);
             bulletin.headers = parseTitles(resultSet);
-            /*bulletin.textFi = parseLocalization(resultSet, Bulletin.Language.fi);
-            bulletin.textEn = parseLocalization(resultSet, Bulletin.Language.en);
-            bulletin.textSv = parseLocalization(resultSet, Bulletin.Language.sv);
-*/
+
             bulletins.add(bulletin);
         }
         return bulletins;
     }
 
-    /*
-    Bulletin.LocalizedText parseLocalization(ResultSet resultSet, Bulletin.Language language) throws SQLException {
-        String columnSuffix = "";
-        switch (language) {
-            case FI:
-                columnSuffix = "_fi";
-                break;
-            case EN:
-                columnSuffix = "_en";
-                break;
-            case SV:
-                columnSuffix = "_sv";
-                break;
-        }
-
-        String title = resultSet.getString("title" + columnSuffix);
-        String text = resultSet.getString("text" + columnSuffix);
-
-        Bulletin.LocalizedText localization = new Bulletin.LocalizedText();
-        localization.language = language;
-        localization.title = title;
-        localization.text = text;
-        return localization;
-    }*/
     TranslatedString parseTitles(ResultSet resultSet) throws SQLException {
         return parseText(resultSet,"title_");
     }
@@ -109,25 +82,9 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
             builder.addTranslation(translation);
         }
         return builder.build();
-        /*
-        Arrays.stream(suffixes).map(languageCode -> {
-
-            builder.addTranslation()
-        }).collect(Collectors.toList());
-
-
-
-        String title = resultSet.getString("title" + columnSuffix);
-        String text = resultSet.getString("text" + columnSuffix);
-
-        Bulletin.LocalizedText localization = new Bulletin.LocalizedText();
-        localization.language = language;
-        localization.title = title;
-        localization.text = text;
-        return localization;*/
     }
 
-    List<Long> parseListFromCommaSeparatedString(String value) {
+    static List<Long> parseListFromCommaSeparatedString(String value) {
         if (value != null && !value.isEmpty()) {
             return Arrays.stream(value.split(","))
                     .map(subString -> Long.parseLong(subString.trim()))
@@ -136,7 +93,6 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
             return new LinkedList<>();
         }
     }
-
 
     private String createQuery() {
         return "SELECT B.bulletins_id" +

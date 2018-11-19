@@ -26,15 +26,15 @@ public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
             statement.setString(1, localDateAsString(timezone));
 
             ResultSet results = performQuery(statement);
-            return parseStops(results);
+            return parseStopPoints(results);
         }
         catch (Exception e) {
-            log.error("Error while  querying and processing Routes", e);
+            log.error("Error while  querying and processing StopPoints", e);
             throw e;
         }
     }
 
-    private List<StopPoint> parseStops(ResultSet resultSet) throws SQLException {
+    private List<StopPoint> parseStopPoints(ResultSet resultSet) throws SQLException {
         List<StopPoint> stopPoints = new LinkedList<>();
         while (resultSet.next()) {
             StopPoint stopPoint = new StopPoint();

@@ -22,15 +22,15 @@ public class LineDAOImpl extends DAOImplBase implements LineDAO {
     public List<Line> getAllLines() throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(queryString)) {
             ResultSet results = performQuery(statement);
-            return parseRoutes(results);
+            return parseLines(results);
         }
         catch (Exception e) {
-            log.error("Error while  querying and processing Routes", e);
+            log.error("Error while  querying and processing Lines", e);
             throw e;
         }
     }
 
-    private List<Line> parseRoutes(ResultSet resultSet) throws SQLException {
+    private List<Line> parseLines(ResultSet resultSet) throws SQLException {
         List<Line> lines = new LinkedList<>();
         while (resultSet.next()) {
             Line line = new Line();
