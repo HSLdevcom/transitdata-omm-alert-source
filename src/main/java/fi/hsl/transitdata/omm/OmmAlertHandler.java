@@ -108,30 +108,38 @@ public class OmmAlertHandler {
     }
 
     Optional<Alert> createAlert(Bulletin bulletin, Map<Long, Line> lines, Map<Long, StopPoint> stopPoints) {
-        long startInUtcSecs = toUtcEpochSecs(bulletin.validFrom);
-        long stopInUtcSecs = toUtcEpochSecs(bulletin.validTo);
+        Optional<Alert> maybeAlert = Optional.empty();
+        try {
+            long startInUtcSecs = toUtcEpochSecs(bulletin.validFrom);
+            long stopInUtcSecs = toUtcEpochSecs(bulletin.validTo);
 
-        TimeRange timeRange = TimeRange.newBuilder()
-                .setStart(startInUtcSecs)
-                .setEnd(stopInUtcSecs)
-                .build();
+            TimeRange timeRange = TimeRange.newBuilder()
+                    .setStart(startInUtcSecs)
+                    .setEnd(stopInUtcSecs)
+                    .build();
 
-        final Alert.Builder builder = Alert.newBuilder();
-        builder.addActivePeriod(timeRange);
-        builder.setCause(bulletin.category.toGtfsCause());
-        builder.setEffect(bulletin.impact.toGtfsEffect());
-        builder.setDescriptionText(bulletin.descriptions);
-        builder.setHeaderText(bulletin.headers);
+            final Alert.Builder builder = Alert.newBuilder();
+            builder.addActivePeriod(timeRange);
+            builder.setCause(bulletin.category.toGtfsCause());
+            builder.setEffect(bulletin.impact.toGtfsEffect());
+            builder.setDescriptionText(bulletin.descriptions);
+            builder.setHeaderText(bulletin.headers);
 
-        List<EntitySelector> entitySelectors = entitySelectorsForBulletin(bulletin, lines, stopPoints);
-        if (entitySelectors.isEmpty()) {
-            log.error("Failed to find any Informed Entities for bulletin Id {}. Discarding alert.", bulletin.id);
-            return Optional.empty();
+            List<EntitySelector> entitySelectors = entitySelectorsForBulletin(bulletin, lines, stopPoints);
+            if (entitySelectors.isEmpty()) {
+                log.error("Failed to find any Informed Entities for bulletin Id {}. Discarding alert.", bulletin.id);
+                maybeAlert = Optional.empty();
+            }
+            else {
+                builder.addAllInformedEntity(entitySelectors);
+                maybeAlert = Optional.of(builder.build());
+            }
         }
-        else {
-            builder.addAllInformedEntity(entitySelectors);
-            return Optional.of(builder.build());
+        catch (Exception e) {
+            log.error("Exception while creating an alert!", e);
+            maybeAlert = Optional.empty();
         }
+        return maybeAlert;
     }
 
     static List<EntitySelector> entitySelectorsForBulletin(Bulletin bulletin, Map<Long, Line> lines, Map<Long, StopPoint> stopPoints) {
