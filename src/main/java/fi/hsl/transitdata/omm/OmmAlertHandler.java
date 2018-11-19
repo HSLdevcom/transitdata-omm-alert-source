@@ -111,6 +111,7 @@ public class OmmAlertHandler {
         //TODO logic for entity selection
         EntitySelector.Builder entityBuilder = EntitySelector.newBuilder()
                 .setAgencyId("HSL"); //TODO get from somewhere
+
         if (!bulletin.affectsAllStops) {
             //TODO add stopPoints
         }
@@ -123,10 +124,9 @@ public class OmmAlertHandler {
         Alert.Builder builder = Alert.newBuilder();
         builder.addActivePeriod(timeRange);
         builder.setCause(bulletin.category.toGtfsCause());
+        builder.setEffect(bulletin.impact.toGtfsEffect());
         builder.setDescriptionText(bulletin.descriptions);
         builder.setHeaderText(bulletin.headers);
-
-        //builder.setEffect() //TODO add
         builder.addInformedEntity(informedEntity);
 
         return builder.build();

@@ -46,6 +46,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
 
             bulletin.id = resultSet.getLong("bulletins_id");
             bulletin.category = Bulletin.Category.fromString(resultSet.getString("category"));
+            bulletin.impact = Bulletin.Impact.fromString(resultSet.getString("impact"));
             bulletin.lastModified = LocalDateTime.parse(resultSet.getString("last_modified"));
             bulletin.validFrom = LocalDateTime.parse(resultSet.getString("valid_from"));
             bulletin.validTo = LocalDateTime.parse(resultSet.getString("valid_to"));
@@ -112,10 +113,12 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    ,MAX(CASE WHEN BLM.language_code = 'en' THEN BLM.description END) AS text_en" +
                 "  FROM [OMM_Community].[dbo].[bulletins] AS B" +
                 "    LEFT JOIN [OMM_Community].[dbo].bulletin_localized_messages AS BLM ON BLM.bulletins_id = B.bulletins_id" +
+                "    LEFT JOIN [OMM_Community].[dbo].passenger_bulletin_meta_data AS PBMD ON PBMD.bulletins_id = B.bulletins_id" +
                 "  WHERE B.[type] = 'PASSENGER_INFORMATION' " +
                 "    AND B.valid_to > ?" +
                 "  GROUP BY B.bulletins_id" +
                 "    ,B.category" +
+                "    ,PBMD.impact" +
                 "    ,B.last_modified" +
                 "    ,B.valid_from" +
                 "    ,B.valid_to" +

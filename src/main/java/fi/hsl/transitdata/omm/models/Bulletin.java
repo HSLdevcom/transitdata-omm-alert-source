@@ -7,6 +7,7 @@ import java.util.List;
 
 public class Bulletin {
     public enum Category {
+        //TODO check if contains all
         EarlierDisruption,
         NoTrafficDisruption,
         RoadMaintenance,
@@ -36,6 +37,60 @@ public class Bulletin {
         }
     }
 
+    public enum Impact {
+        //TODO check if contains all
+        Cancelled,
+        Delayed,
+        DeviatingSchedule,
+        DisruptionRoute,
+        PossibleDeviations,
+        PossiblyDelayed,
+        ReducedTransport,
+        ReturningToNormal;
+
+        public static Impact fromString(String str) {
+            switch (str) {
+                case "CANCELLED": return Cancelled;
+                case "DELAYED": return Delayed;
+                case "DEVIATING_SCHEDULE": return DeviatingSchedule;
+                case "DISRUPTION_ROUTE": return DisruptionRoute;
+                case "POSSIBLE_DEVIATIONS": return PossibleDeviations;
+                case "POSSIBLY_DELAYED": return PossiblyDelayed;
+                case "REDUCED_TRANSPORT": return ReducedTransport;
+                case "RETURNING_TO_NORMAL": return ReturningToNormal;
+                default: throw new IllegalArgumentException("Could not parse Impact from String: " + str);
+            }
+        }
+
+        /**
+         * @return possible GTFS-RT Effects:
+         * NO_SERVICE,
+         * REDUCED_SERVICE,
+         * SIGNIFICANT_DELAYS,
+         * DETOUR,
+         * ADDITIONAL_SERVICE,
+         * MODIFIED_SERVICE,
+         * OTHER_EFFECT,
+         * UNKNOWN_EFFECT,
+         * STOP_MOVED
+         */
+        public GtfsRealtime.Alert.Effect toGtfsEffect() {
+            //TODO Check all these!
+            switch (this) {
+                case Cancelled: return GtfsRealtime.Alert.Effect.NO_SERVICE;
+                case Delayed: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
+                case DeviatingSchedule: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
+                case DisruptionRoute: return GtfsRealtime.Alert.Effect.DETOUR;
+                case PossibleDeviations: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
+                case PossiblyDelayed: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
+                case ReducedTransport: return GtfsRealtime.Alert.Effect.REDUCED_SERVICE;
+                case ReturningToNormal: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
+                default: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
+            }
+        }
+    }
+
+
     public enum Language {
         //Let's define these already in BCP-47 format, so .toString() works
         fi, en, sv
@@ -43,6 +98,7 @@ public class Bulletin {
 
     public long id;
     public Category category;
+    public Impact impact;
     public LocalDateTime lastModified;
     public LocalDateTime validFrom;
     public LocalDateTime validTo;
