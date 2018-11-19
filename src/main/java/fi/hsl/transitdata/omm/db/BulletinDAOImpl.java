@@ -52,8 +52,8 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
             bulletin.validTo = LocalDateTime.parse(resultSet.getString("valid_to"));
             bulletin.affectsAllRoutes = resultSet.getInt("affects_all_routes") > 0;
             bulletin.affectsAllStops = resultSet.getInt("affects_all_stops") > 0;
-            bulletin.affectedRouteIds = parseListFromCommaSeparatedString(resultSet.getString("affected_route_ids"));
-            bulletin.affectedStopIds = parseListFromCommaSeparatedString(resultSet.getString("affected_stop_ids"));
+            bulletin.affectedLineGids = parseListFromCommaSeparatedString(resultSet.getString("affected_route_ids"));
+            bulletin.affectedStopGids = parseListFromCommaSeparatedString(resultSet.getString("affected_stop_ids"));
             bulletin.descriptions = parseDescriptions(resultSet);
             bulletin.headers = parseTitles(resultSet);
 

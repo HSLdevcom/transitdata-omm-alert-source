@@ -19,10 +19,16 @@ import static com.google.transit.realtime.GtfsRealtime.*;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class OmmAlertHandler {
+
+    public static final String AGENCY_ENTITY_SELECTOR = "HSL";
+
     static final Logger log = LoggerFactory.getLogger(OmmAlertHandler.class);
 
     String timeZone;
@@ -47,7 +53,7 @@ public class OmmAlertHandler {
         AlertState latestState = new AlertState(bulletins);
 
         if (!latestState.equals(previousState)) {
-            List<Line> lines = lineDAO.getAllLines();
+            Map<Long, Line> lines = lineDAO.getAllLines();
             List<StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
 
             GtfsRealtime.FeedMessage message = createFeedMessage(bulletins, lines, stopPoints);
@@ -59,7 +65,7 @@ public class OmmAlertHandler {
     }
 
 
-    FeedMessage createFeedMessage(List<Bulletin> bulletins, List<Line> lines, List<StopPoint> stopPoints) {
+    FeedMessage createFeedMessage(List<Bulletin> bulletins, Map<Long, Line> lines, List<StopPoint> stopPoints) {
         List<GtfsRealtime.FeedEntity> entities = createFeedEntities(bulletins, lines, stopPoints);
 
         //TODO define where to get the timestamp!?
@@ -76,16 +82,18 @@ public class OmmAlertHandler {
                 .build();
     }
 
-    List<FeedEntity> createFeedEntities(final List<Bulletin> bulletins, final List<Line> lines, final List<StopPoint> stopPoints) {
+    List<FeedEntity> createFeedEntities(final List<Bulletin> bulletins, final Map<Long, Line> lines, final List<StopPoint> stopPoints) {
         return bulletins.stream().map(bulletin -> {
-
-            final Alert alert = createAlert(bulletin, lines, stopPoints);
-
-            FeedEntity.Builder builder = FeedEntity.newBuilder();
-            builder.setId(Long.toString(bulletin.id));
-            builder.setAlert(alert);
-            return builder.build();
-        }).collect(Collectors.toList());
+            final Optional<Alert> maybeAlert = createAlert(bulletin, lines, stopPoints);
+            return maybeAlert.map(alert -> {
+                FeedEntity.Builder builder = FeedEntity.newBuilder();
+                builder.setId(Long.toString(bulletin.id));
+                builder.setAlert(alert);
+                return builder.build();
+            });
+        }).filter(Optional::isPresent)
+          .map(Optional::get)
+          .collect(Collectors.toList());
     }
 
 
@@ -99,7 +107,7 @@ public class OmmAlertHandler {
         return localTimestamp.atZone(zone).toInstant().toEpochMilli() / 1000;
     }
 
-    Alert createAlert(Bulletin bulletin, List<Line> lines, List<StopPoint> stopPoints) {
+    Optional<Alert> createAlert(Bulletin bulletin, Map<Long, Line> lines, List<StopPoint> stopPoints) {
         long startInUtcSecs = toUtcEpochSecs(bulletin.validFrom);
         long stopInUtcSecs = toUtcEpochSecs(bulletin.validTo);
 
@@ -108,28 +116,55 @@ public class OmmAlertHandler {
                 .setEnd(stopInUtcSecs)
                 .build();
 
-        //TODO logic for entity selection
-        EntitySelector.Builder entityBuilder = EntitySelector.newBuilder()
-                .setAgencyId("HSL"); //TODO get from somewhere
-
-        if (!bulletin.affectsAllStops) {
-            //TODO add stopPoints
-        }
-        if (!bulletin.affectsAllRoutes) {
-            //TODO add all lines
-        }
-
-        EntitySelector informedEntity = entityBuilder.build();
-
-        Alert.Builder builder = Alert.newBuilder();
+        final Alert.Builder builder = Alert.newBuilder();
         builder.addActivePeriod(timeRange);
         builder.setCause(bulletin.category.toGtfsCause());
         builder.setEffect(bulletin.impact.toGtfsEffect());
         builder.setDescriptionText(bulletin.descriptions);
         builder.setHeaderText(bulletin.headers);
-        builder.addInformedEntity(informedEntity);
 
-        return builder.build();
+        List<EntitySelector> entitySelectors = entitySelectorsForBulletin(bulletin, lines, stopPoints);
+        if (entitySelectors.isEmpty()) {
+            log.error("Failed to find any Informed Entities for bulletin Id {}. Discarding alert.", bulletin.id);
+            return Optional.empty();
+        }
+        else {
+            builder.addAllInformedEntity(entitySelectors);
+            return Optional.of(builder.build());
+        }
+    }
+
+    static List<EntitySelector> entitySelectorsForBulletin(Bulletin bulletin, Map<Long, Line> lines, List<StopPoint> stopPoints) {
+        List<EntitySelector> selectors = new LinkedList<>();
+        if (bulletin.affectsAllRoutes || bulletin.affectsAllStops) {
+            log.debug("Bulletin {} affects all routes or stops", bulletin.id);
+
+            EntitySelector agency = EntitySelector.newBuilder()
+                    .setAgencyId(AGENCY_ENTITY_SELECTOR)
+                    .build();
+            selectors.add(agency);
+        }
+        else if (!bulletin.affectsAllStops) {
+            //TODO add stopPoints
+
+
+        }
+        else if (!bulletin.affectsAllRoutes) {
+            for (Long lineGid : bulletin.affectedLineGids) {
+                Optional<Line> line = Optional.ofNullable(lines.get(lineGid));
+                if (line.isPresent()) {
+                    String lineId = line.get().lineId;
+                    EntitySelector entityBuilder = EntitySelector.newBuilder()
+                            .setRouteId(lineId).build();
+                    selectors.add(entityBuilder);
+                }
+                else {
+                    log.error("Failed to find line ID for line GID: {}", lineGid);
+                }
+            }
+            log.debug("Found {} entity selectors for routes (should have been {})", selectors.size(), bulletin.affectedLineGids.size());
+        }
+        return selectors;
     }
 
     private void sendPulsarMessage(GtfsRealtime.FeedMessage message, long timestamp) throws PulsarClientException {

@@ -104,8 +104,8 @@ public class Bulletin {
     public LocalDateTime validTo;
     public boolean affectsAllRoutes;
     public boolean affectsAllStops;
-    public List<Long> affectedRouteIds;
-    public List<Long> affectedStopIds;
+    public List<Long> affectedLineGids;
+    public List<Long> affectedStopGids;
     public GtfsRealtime.TranslatedString descriptions;
     public GtfsRealtime.TranslatedString headers;
 

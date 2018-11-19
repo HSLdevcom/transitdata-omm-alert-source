@@ -6,8 +6,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class LineDAOImpl extends DAOImplBase implements LineDAO {
 
@@ -19,7 +21,7 @@ public class LineDAOImpl extends DAOImplBase implements LineDAO {
     }
 
     @Override
-    public List<Line> getAllLines() throws SQLException {
+    public Map<Long, Line> getAllLines() throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(queryString)) {
             ResultSet results = performQuery(statement);
             return parseLines(results);
@@ -30,13 +32,13 @@ public class LineDAOImpl extends DAOImplBase implements LineDAO {
         }
     }
 
-    private List<Line> parseLines(ResultSet resultSet) throws SQLException {
-        List<Line> lines = new LinkedList<>();
+    private Map<Long, Line>  parseLines(ResultSet resultSet) throws SQLException {
+        Map<Long, Line> lines = new HashMap<>();
         while (resultSet.next()) {
             Line line = new Line();
             line.gid = resultSet.getLong("Gid");;
             line.lineId = resultSet.getString("StringValue");
-            lines.add(line);
+            lines.put(line.gid, line);
         }
         return lines;
     }
