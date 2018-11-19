@@ -1,6 +1,6 @@
 package fi.hsl.transitdata.omm.models;
 
-public class Route {
+public class Line {
     public long gid;
-    public String routeId;
+    public String lineId;
 }

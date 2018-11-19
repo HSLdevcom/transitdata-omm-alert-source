@@ -30,7 +30,7 @@ public class Main {
             final PulsarApplication app = PulsarApplication.newInstance(config);
             final PulsarApplicationContext context = app.getContext();
             final OmmDbConnector omm = OmmDbConnector.newInstance(context, connectionString);
-            final OmmAlertHandler alerter = new OmmAlertHandler(app.getContext(), omm.getBulletinDAO(), omm.getRouteDAO(), omm.getStopPointDAO());
+            final OmmAlertHandler alerter = new OmmAlertHandler(app.getContext(), omm.getBulletinDAO(), omm.getLineDAO(), omm.getStopPointDAO());
 
             final int pollIntervalInSeconds = config.getInt("omm.interval");
             final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();

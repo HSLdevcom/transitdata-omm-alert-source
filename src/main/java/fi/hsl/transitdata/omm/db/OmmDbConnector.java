@@ -13,7 +13,7 @@ public class OmmDbConnector {
     private final String timezone;
 
     private BulletinDAO bulletinDAO;
-    private RouteDAO routeDAO;
+    private LineDAO lineDAO;
     private StopPointDAO stopPointDAO;
 
     private OmmDbConnector(PulsarApplicationContext context, Connection connection) {
@@ -22,7 +22,7 @@ public class OmmDbConnector {
 
         bulletinDAO = new BulletinDAOImpl(connection, timezone);
         stopPointDAO = new StopPointDAOImpl(connection, timezone);
-        routeDAO = new RouteDAOImpl(connection);
+        lineDAO = new LineDAOImpl(connection);
     }
 
     public static OmmDbConnector newInstance(PulsarApplicationContext context, String jdbcConnectionString) throws SQLException {
@@ -34,8 +34,8 @@ public class OmmDbConnector {
         return bulletinDAO;
     }
 
-    public RouteDAO getRouteDAO() {
-        return routeDAO;
+    public LineDAO getLineDAO() {
+        return lineDAO;
     }
 
     public StopPointDAO getStopPointDAO() {

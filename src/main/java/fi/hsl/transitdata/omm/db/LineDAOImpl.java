@@ -1,6 +1,6 @@
 package fi.hsl.transitdata.omm.db;
 
-import fi.hsl.transitdata.omm.models.Route;
+import fi.hsl.transitdata.omm.models.Line;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -9,17 +9,17 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
-public class RouteDAOImpl extends DAOImplBase implements RouteDAO {
+public class LineDAOImpl extends DAOImplBase implements LineDAO {
 
     String queryString;
 
-    public RouteDAOImpl(Connection connection) {
+    public LineDAOImpl(Connection connection) {
         super(connection);
         queryString = createQuery();
     }
 
     @Override
-    public List<Route> getAllRoutes() throws SQLException {
+    public List<Line> getAllLines() throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(queryString)) {
             ResultSet results = performQuery(statement);
             return parseRoutes(results);
@@ -30,15 +30,15 @@ public class RouteDAOImpl extends DAOImplBase implements RouteDAO {
         }
     }
 
-    private List<Route> parseRoutes(ResultSet resultSet) throws SQLException {
-        List<Route> routes = new LinkedList<>();
+    private List<Line> parseRoutes(ResultSet resultSet) throws SQLException {
+        List<Line> lines = new LinkedList<>();
         while (resultSet.next()) {
-            Route route = new Route();
-            route.gid = resultSet.getLong("Gid");;
-            route.routeId = resultSet.getString("StringValue");
-            routes.add(route);
+            Line line = new Line();
+            line.gid = resultSet.getLong("Gid");;
+            line.lineId = resultSet.getString("StringValue");
+            lines.add(line);
         }
-        return routes;
+        return lines;
     }
 
     private String createQuery() {

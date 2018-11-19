@@ -4,11 +4,11 @@ import com.google.transit.realtime.GtfsRealtime;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
 import fi.hsl.common.transitdata.TransitdataProperties;
 import fi.hsl.transitdata.omm.db.BulletinDAO;
-import fi.hsl.transitdata.omm.db.RouteDAO;
+import fi.hsl.transitdata.omm.db.LineDAO;
 import fi.hsl.transitdata.omm.db.StopPointDAO;
 import fi.hsl.transitdata.omm.models.AlertState;
 import fi.hsl.transitdata.omm.models.Bulletin;
-import fi.hsl.transitdata.omm.models.Route;
+import fi.hsl.transitdata.omm.models.Line;
 import fi.hsl.transitdata.omm.models.StopPoint;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClientException;
@@ -30,15 +30,15 @@ public class OmmAlertHandler {
     private AlertState previousState = null;
 
     BulletinDAO bulletinDAO;
-    RouteDAO routeDAO;
+    LineDAO lineDAO;
     StopPointDAO stopPointDAO;
 
-    public OmmAlertHandler(PulsarApplicationContext context, BulletinDAO bulletinDAO, RouteDAO routeDAO, StopPointDAO stopPointDAO) {
+    public OmmAlertHandler(PulsarApplicationContext context, BulletinDAO bulletinDAO, LineDAO lineDAO, StopPointDAO stopPointDAO) {
         producer = context.getProducer();
         timeZone = context.getConfig().getString("omm.timezone");
 
         this.bulletinDAO = bulletinDAO;
-        this.routeDAO = routeDAO;
+        this.lineDAO = lineDAO;
         this.stopPointDAO = stopPointDAO;
     }
 
@@ -47,10 +47,10 @@ public class OmmAlertHandler {
         AlertState latestState = new AlertState(bulletins);
 
         if (!latestState.equals(previousState)) {
-            List<Route> routes = routeDAO.getAllRoutes();
+            List<Line> lines = lineDAO.getAllLines();
             List<StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
 
-            GtfsRealtime.FeedMessage message = createFeedMessage(bulletins, routes, stopPoints);
+            GtfsRealtime.FeedMessage message = createFeedMessage(bulletins, lines, stopPoints);
 
             final long timestamp = System.currentTimeMillis(); //TODO read from feedMessage?
             sendPulsarMessage(message, timestamp);
@@ -59,8 +59,8 @@ public class OmmAlertHandler {
     }
 
 
-    FeedMessage createFeedMessage(List<Bulletin> bulletins, List<Route> routes, List<StopPoint> stopPoints) {
-        List<GtfsRealtime.FeedEntity> entities = createFeedEntities(bulletins, routes, stopPoints);
+    FeedMessage createFeedMessage(List<Bulletin> bulletins, List<Line> lines, List<StopPoint> stopPoints) {
+        List<GtfsRealtime.FeedEntity> entities = createFeedEntities(bulletins, lines, stopPoints);
 
         //TODO define where to get the timestamp!?
         final long timestamp = System.currentTimeMillis() / 1000; //TODO: entities.stream().max(_.timestamp)
@@ -76,10 +76,10 @@ public class OmmAlertHandler {
                 .build();
     }
 
-    List<FeedEntity> createFeedEntities(final List<Bulletin> bulletins, final List<Route> routes, final List<StopPoint> stopPoints) {
+    List<FeedEntity> createFeedEntities(final List<Bulletin> bulletins, final List<Line> lines, final List<StopPoint> stopPoints) {
         return bulletins.stream().map(bulletin -> {
 
-            final Alert alert = createAlert(bulletin, routes, stopPoints);
+            final Alert alert = createAlert(bulletin, lines, stopPoints);
 
             FeedEntity.Builder builder = FeedEntity.newBuilder();
             builder.setId(Long.toString(bulletin.id));
@@ -99,7 +99,7 @@ public class OmmAlertHandler {
         return localTimestamp.atZone(zone).toInstant().toEpochMilli() / 1000;
     }
 
-    Alert createAlert(Bulletin bulletin, List<Route> routes, List<StopPoint> stopPoints) {
+    Alert createAlert(Bulletin bulletin, List<Line> lines, List<StopPoint> stopPoints) {
         long startInUtcSecs = toUtcEpochSecs(bulletin.validFrom);
         long stopInUtcSecs = toUtcEpochSecs(bulletin.validTo);
 
@@ -115,7 +115,7 @@ public class OmmAlertHandler {
             //TODO add stopPoints
         }
         if (!bulletin.affectsAllRoutes) {
-            //TODO add all routes
+            //TODO add all lines
         }
 
         EntitySelector informedEntity = entityBuilder.build();
