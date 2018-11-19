@@ -54,7 +54,7 @@ public class OmmAlertHandler {
 
         if (!latestState.equals(previousState)) {
             Map<Long, Line> lines = lineDAO.getAllLines();
-            List<StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
+            Map<Long, StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
 
             GtfsRealtime.FeedMessage message = createFeedMessage(bulletins, lines, stopPoints);
 
@@ -65,7 +65,7 @@ public class OmmAlertHandler {
     }
 
 
-    FeedMessage createFeedMessage(List<Bulletin> bulletins, Map<Long, Line> lines, List<StopPoint> stopPoints) {
+    FeedMessage createFeedMessage(List<Bulletin> bulletins, Map<Long, Line> lines, Map<Long, StopPoint> stopPoints) {
         List<GtfsRealtime.FeedEntity> entities = createFeedEntities(bulletins, lines, stopPoints);
 
         //TODO define where to get the timestamp!?
@@ -82,7 +82,7 @@ public class OmmAlertHandler {
                 .build();
     }
 
-    List<FeedEntity> createFeedEntities(final List<Bulletin> bulletins, final Map<Long, Line> lines, final List<StopPoint> stopPoints) {
+    List<FeedEntity> createFeedEntities(final List<Bulletin> bulletins, final Map<Long, Line> lines, final Map<Long, StopPoint> stopPoints) {
         return bulletins.stream().map(bulletin -> {
             final Optional<Alert> maybeAlert = createAlert(bulletin, lines, stopPoints);
             return maybeAlert.map(alert -> {
@@ -107,7 +107,7 @@ public class OmmAlertHandler {
         return localTimestamp.atZone(zone).toInstant().toEpochMilli() / 1000;
     }
 
-    Optional<Alert> createAlert(Bulletin bulletin, Map<Long, Line> lines, List<StopPoint> stopPoints) {
+    Optional<Alert> createAlert(Bulletin bulletin, Map<Long, Line> lines, Map<Long, StopPoint> stopPoints) {
         long startInUtcSecs = toUtcEpochSecs(bulletin.validFrom);
         long stopInUtcSecs = toUtcEpochSecs(bulletin.validTo);
 
@@ -134,7 +134,7 @@ public class OmmAlertHandler {
         }
     }
 
-    static List<EntitySelector> entitySelectorsForBulletin(Bulletin bulletin, Map<Long, Line> lines, List<StopPoint> stopPoints) {
+    static List<EntitySelector> entitySelectorsForBulletin(Bulletin bulletin, Map<Long, Line> lines, Map<Long, StopPoint> stopPoints) {
         List<EntitySelector> selectors = new LinkedList<>();
         if (bulletin.affectsAllRoutes || bulletin.affectsAllStops) {
             log.debug("Bulletin {} affects all routes or stops", bulletin.id);
@@ -143,27 +143,36 @@ public class OmmAlertHandler {
                     .setAgencyId(AGENCY_ENTITY_SELECTOR)
                     .build();
             selectors.add(agency);
-        }
-        else if (!bulletin.affectsAllStops) {
-            //TODO add stopPoints
-
-
-        }
-        else if (!bulletin.affectsAllRoutes) {
+        } else if (bulletin.affectedLineGids.size() > 0) {
             for (Long lineGid : bulletin.affectedLineGids) {
                 Optional<Line> line = Optional.ofNullable(lines.get(lineGid));
                 if (line.isPresent()) {
                     String lineId = line.get().lineId;
-                    EntitySelector entityBuilder = EntitySelector.newBuilder()
+                    EntitySelector entity = EntitySelector.newBuilder()
                             .setRouteId(lineId).build();
-                    selectors.add(entityBuilder);
+                    selectors.add(entity);
                 }
                 else {
                     log.error("Failed to find line ID for line GID: {}", lineGid);
                 }
             }
             log.debug("Found {} entity selectors for routes (should have been {})", selectors.size(), bulletin.affectedLineGids.size());
+        } else if (bulletin.affectedStopGids.size() > 0) {
+            for (Long stopGid : bulletin.affectedStopGids) {
+                Optional<StopPoint> stop = Optional.ofNullable(stopPoints.get(stopGid));
+                if (stop.isPresent()) {
+                    String stopId = stop.get().stopId;
+                    EntitySelector entity = EntitySelector.newBuilder()
+                            .setStopId(stopId).build();
+                    selectors.add(entity);
+                }
+                else {
+                    log.error("Failed to find stop ID for stop GID: {}", stopGid);
+                }
+            }
+            log.debug("Found {} entity selectors for routes (should have been {})", selectors.size(), bulletin.affectedStopGids.size());
         }
+
         return selectors;
     }
 

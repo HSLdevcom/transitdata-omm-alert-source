@@ -6,8 +6,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
 
@@ -21,7 +23,7 @@ public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
     }
 
     @Override
-    public List<StopPoint> getAllStopPoints() throws SQLException {
+    public Map<Long, StopPoint> getAllStopPoints() throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(queryString)) {
             statement.setString(1, localDateAsString(timezone));
 
@@ -34,13 +36,14 @@ public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
         }
     }
 
-    private List<StopPoint> parseStopPoints(ResultSet resultSet) throws SQLException {
-        List<StopPoint> stopPoints = new LinkedList<>();
+    private Map<Long, StopPoint> parseStopPoints(ResultSet resultSet) throws SQLException {
+        Map<Long, StopPoint> stopPoints = new HashMap<>();
         while (resultSet.next()) {
             StopPoint stopPoint = new StopPoint();
-            stopPoint.gid = resultSet.getLong("Gid");;
-            stopPoint.stopId = resultSet.getLong("Number");
-            stopPoints.add(stopPoint);
+            stopPoint.gid = resultSet.getLong("Gid");
+            stopPoint.stopId = resultSet.getString("Number");
+
+            stopPoints.put(stopPoint.gid, stopPoint);
         }
         return stopPoints;
     }
