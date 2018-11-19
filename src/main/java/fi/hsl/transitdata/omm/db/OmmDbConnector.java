@@ -14,14 +14,14 @@ public class OmmDbConnector {
 
     private BulletinDAO bulletinDAO;
     private RouteDAO routeDAO;
-    private StopDAO stopDAO;
+    private StopPointDAO stopPointDAO;
 
     private OmmDbConnector(PulsarApplicationContext context, Connection connection) {
         timezone = context.getConfig().getString("omm.timezone");
         log.info("Using timezone " + timezone);
 
         bulletinDAO = new BulletinDAOImpl(connection, timezone);
-        stopDAO = new StopDAOImpl(connection, timezone);
+        stopPointDAO = new StopPointDAOImpl(connection, timezone);
         routeDAO = new RouteDAOImpl(connection);
     }
 
@@ -38,8 +38,8 @@ public class OmmDbConnector {
         return routeDAO;
     }
 
-    public StopDAO getStopDAO() {
-        return stopDAO;
+    public StopPointDAO getStopPointDAO() {
+        return stopPointDAO;
     }
 
 }

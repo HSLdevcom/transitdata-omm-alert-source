@@ -1,7 +1,6 @@
 package fi.hsl.transitdata.omm.db;
 
-import fi.hsl.transitdata.omm.models.Route;
-import fi.hsl.transitdata.omm.models.Stop;
+import fi.hsl.transitdata.omm.models.StopPoint;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,19 +9,19 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
-public class StopDAOImpl extends DAOImplBase implements StopDAO {
+public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
 
     String queryString;
     String timezone;
 
-    public StopDAOImpl(Connection connection, String timezone) {
+    public StopPointDAOImpl(Connection connection, String timezone) {
         super(connection);
         queryString = createQuery();
         this.timezone = timezone;
     }
 
     @Override
-    public List<Stop> getAllStops() throws SQLException {
+    public List<StopPoint> getAllStopPoints() throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(queryString)) {
             statement.setString(1, localDateAsString(timezone));
 
@@ -35,15 +34,15 @@ public class StopDAOImpl extends DAOImplBase implements StopDAO {
         }
     }
 
-    private List<Stop> parseStops(ResultSet resultSet) throws SQLException {
-        List<Stop> stops = new LinkedList<>();
+    private List<StopPoint> parseStops(ResultSet resultSet) throws SQLException {
+        List<StopPoint> stopPoints = new LinkedList<>();
         while (resultSet.next()) {
-            Stop stop = new Stop();
-            stop.gid = resultSet.getLong("Gid");;
-            stop.stopId = resultSet.getLong("Number");
-            stops.add(stop);
+            StopPoint stopPoint = new StopPoint();
+            stopPoint.gid = resultSet.getLong("Gid");;
+            stopPoint.stopId = resultSet.getLong("Number");
+            stopPoints.add(stopPoint);
         }
-        return stops;
+        return stopPoints;
     }
 
     private String createQuery() {

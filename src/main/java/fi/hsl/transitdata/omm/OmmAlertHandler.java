@@ -5,11 +5,11 @@ import fi.hsl.common.pulsar.PulsarApplicationContext;
 import fi.hsl.common.transitdata.TransitdataProperties;
 import fi.hsl.transitdata.omm.db.BulletinDAO;
 import fi.hsl.transitdata.omm.db.RouteDAO;
-import fi.hsl.transitdata.omm.db.StopDAO;
+import fi.hsl.transitdata.omm.db.StopPointDAO;
 import fi.hsl.transitdata.omm.models.AlertState;
 import fi.hsl.transitdata.omm.models.Bulletin;
 import fi.hsl.transitdata.omm.models.Route;
-import fi.hsl.transitdata.omm.models.Stop;
+import fi.hsl.transitdata.omm.models.StopPoint;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.slf4j.Logger;
@@ -31,15 +31,15 @@ public class OmmAlertHandler {
 
     BulletinDAO bulletinDAO;
     RouteDAO routeDAO;
-    StopDAO stopDAO;
+    StopPointDAO stopPointDAO;
 
-    public OmmAlertHandler(PulsarApplicationContext context, BulletinDAO bulletinDAO, RouteDAO routeDAO, StopDAO stopDAO) {
+    public OmmAlertHandler(PulsarApplicationContext context, BulletinDAO bulletinDAO, RouteDAO routeDAO, StopPointDAO stopPointDAO) {
         producer = context.getProducer();
         timeZone = context.getConfig().getString("omm.timezone");
 
         this.bulletinDAO = bulletinDAO;
         this.routeDAO = routeDAO;
-        this.stopDAO = stopDAO;
+        this.stopPointDAO = stopPointDAO;
     }
 
     public void pollAndSend() throws SQLException, PulsarClientException {
@@ -48,9 +48,9 @@ public class OmmAlertHandler {
 
         if (!latestState.equals(previousState)) {
             List<Route> routes = routeDAO.getAllRoutes();
-            List<Stop> stops = stopDAO.getAllStops();
+            List<StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
 
-            GtfsRealtime.FeedMessage message = createFeedMessage(bulletins, routes, stops);
+            GtfsRealtime.FeedMessage message = createFeedMessage(bulletins, routes, stopPoints);
 
             final long timestamp = System.currentTimeMillis(); //TODO read from feedMessage?
             sendPulsarMessage(message, timestamp);
@@ -59,8 +59,8 @@ public class OmmAlertHandler {
     }
 
 
-    FeedMessage createFeedMessage(List<Bulletin> bulletins, List<Route> routes, List<Stop> stops) {
-        List<GtfsRealtime.FeedEntity> entities = createFeedEntities(bulletins, routes, stops);
+    FeedMessage createFeedMessage(List<Bulletin> bulletins, List<Route> routes, List<StopPoint> stopPoints) {
+        List<GtfsRealtime.FeedEntity> entities = createFeedEntities(bulletins, routes, stopPoints);
 
         //TODO define where to get the timestamp!?
         final long timestamp = System.currentTimeMillis() / 1000; //TODO: entities.stream().max(_.timestamp)
@@ -76,10 +76,10 @@ public class OmmAlertHandler {
                 .build();
     }
 
-    List<FeedEntity> createFeedEntities(final List<Bulletin> bulletins, final List<Route> routes, final List<Stop> stops) {
+    List<FeedEntity> createFeedEntities(final List<Bulletin> bulletins, final List<Route> routes, final List<StopPoint> stopPoints) {
         return bulletins.stream().map(bulletin -> {
 
-            final Alert alert = createAlert(bulletin, routes, stops);
+            final Alert alert = createAlert(bulletin, routes, stopPoints);
 
             FeedEntity.Builder builder = FeedEntity.newBuilder();
             builder.setId(Long.toString(bulletin.id));
@@ -99,7 +99,7 @@ public class OmmAlertHandler {
         return localTimestamp.atZone(zone).toInstant().toEpochMilli() / 1000;
     }
 
-    Alert createAlert(Bulletin bulletin, List<Route> routes, List<Stop> stops) {
+    Alert createAlert(Bulletin bulletin, List<Route> routes, List<StopPoint> stopPoints) {
         long startInUtcSecs = toUtcEpochSecs(bulletin.validFrom);
         long stopInUtcSecs = toUtcEpochSecs(bulletin.validTo);
 
@@ -112,7 +112,7 @@ public class OmmAlertHandler {
         EntitySelector.Builder entityBuilder = EntitySelector.newBuilder()
                 .setAgencyId("HSL"); //TODO get from somewhere
         if (!bulletin.affectsAllStops) {
-            //TODO add stops
+            //TODO add stopPoints
         }
         if (!bulletin.affectsAllRoutes) {
             //TODO add all routes
