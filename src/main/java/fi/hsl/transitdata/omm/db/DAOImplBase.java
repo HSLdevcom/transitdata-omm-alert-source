@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
@@ -15,6 +16,8 @@ public class DAOImplBase {
     static final Logger log = LoggerFactory.getLogger(DAOImplBase.class);
 
     protected Connection connection;
+
+    public static final DateTimeFormatter OMM_DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     DAOImplBase(Connection connection) {
         this.connection = connection;
@@ -37,10 +40,14 @@ public class DAOImplBase {
     }
 
     static String localDatetimeAsString(Instant instant, String zoneId) {
-        return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(instant.atZone(ZoneId.of(zoneId)));
+        return OMM_DT_FORMATTER.format(instant.atZone(ZoneId.of(zoneId)));
     }
 
     static String localDateAsString(Instant instant, String zoneId) {
         return DateTimeFormatter.ofPattern("yyyy-MM-dd").format(instant.atZone(ZoneId.of(zoneId)));
+    }
+
+    static LocalDateTime parseOmmLocalDateTime(String dt) {
+        return LocalDateTime.parse(dt, OMM_DT_FORMATTER);
     }
 }
