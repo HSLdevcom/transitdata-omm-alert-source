@@ -109,4 +109,44 @@ public class Bulletin {
     public GtfsRealtime.TranslatedString descriptions;
     public GtfsRealtime.TranslatedString headers;
 
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof Bulletin) {
+            return equals((Bulletin) other);
+        }
+        return false;
+    }
+
+    public boolean equals(Bulletin other) {
+        if (other == this)
+            return true;
+
+        if (other == null)
+            return false;
+
+        boolean same = true;
+        same &= this.id == other.id;
+        same &= this.category == other.category;
+        same &= this.impact == other.impact;
+        same &= equalsWithNullCheck(this.lastModified, other.lastModified);
+        same &= equalsWithNullCheck(this.validFrom, other.validFrom);
+        same &= equalsWithNullCheck(this.validTo, other.validTo);
+        same &= this.affectsAllRoutes == other.affectsAllRoutes;
+        same &= this.affectsAllStops == other.affectsAllStops;
+        same &= equalsWithNullCheck(this.affectedLineGids, other.affectedLineGids);
+        same &= equalsWithNullCheck(this.affectedStopGids, other.affectedStopGids);
+        same &= equalsWithNullCheck(this.descriptions, other.descriptions);
+        same &= equalsWithNullCheck(this.headers, other.headers);
+
+        return same;
+    }
+
+    static boolean equalsWithNullCheck(Object o1, Object o2) {
+        if (o1 == null && o2 == null)
+            return true;
+        if (o1 != null && o2 != null)
+            return o1.equals(o2);
+        return false;
+    }
+
 }

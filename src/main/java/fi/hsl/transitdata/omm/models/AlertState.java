@@ -1,14 +1,15 @@
 package fi.hsl.transitdata.omm.models;
 
-import com.google.transit.realtime.GtfsRealtime;
-
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class AlertState {
     List<Bulletin> alerts;
 
     public AlertState(List<Bulletin> alerts) {
         this.alerts = alerts;
+        if (this.alerts == null)
+            this.alerts = new LinkedList<>();
     }
 
     @Override
@@ -20,19 +21,35 @@ public class AlertState {
     }
 
     public boolean equals(AlertState other) {
-        if (other == null)
+        if (other == this)
+            return true;
+
+        if (other == null || other.alerts == null)
             return false;
 
         if (other.alerts.size() != this.alerts.size())
             return false;
 
-        //TODO use Set. not list.
-        return false;
+        //Let's not modify the original lists, just to avoid side effects.
+        List<Bulletin> oursSorted = asSorted(alerts);
+        ListIterator<Bulletin> ourItr = oursSorted.listIterator();
+
+        List<Bulletin> theirsSorted = asSorted(other.alerts);
+        ListIterator<Bulletin> theirItr = theirsSorted.listIterator();
+
+        while (ourItr.hasNext()) {
+            Bulletin ours = ourItr.next();
+            Bulletin theirs = theirItr.next();
+
+            if (!ours.equals(theirs)) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    @Override
-    public int hashCode() {
-        return 0;//TODO create hash from the entire set.... difficult. yes.
+    private static List<Bulletin> asSorted(List<Bulletin> list) {
+        return list.stream().sorted(Comparator.comparingLong(bulletin -> bulletin.id)).collect(Collectors.toList());
     }
 
 }
