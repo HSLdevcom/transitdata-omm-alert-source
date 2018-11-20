@@ -14,7 +14,9 @@ public class Bulletin {
         RoadClosed,
         RoadTrench,
         TrackBlocked,
-        TrafficAccident;
+        TrafficAccident,
+        TrafficJam,
+        TechicalFailure;
 
         public static Category fromString(String str) {
             switch (str) {
@@ -25,6 +27,8 @@ public class Bulletin {
                 case "ROAD_TRENCH": return RoadTrench;
                 case "TRACK_BLOCKED": return TrackBlocked;
                 case "TRAFFIC_ACCIDENT": return TrafficAccident;
+                case "TRAFFIC_JAM": return TrafficJam;
+                case "TECHNICAL_FAILURE": return TechicalFailure;
                 default: throw new IllegalArgumentException("Could not parse category from String: " + str);
             }
         }

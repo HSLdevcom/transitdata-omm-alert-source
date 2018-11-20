@@ -63,7 +63,7 @@ public class BulletinTest {
     @Test
     public void testCategoryToGtfsEnum() {
         List<Bulletin.Category> all = Arrays.asList(Bulletin.Category.values());
-        assertEquals(7, all.size());
+        assertEquals(9, all.size());
         for (Bulletin.Category c: all) {
             assertNotNull(c.toGtfsCause());
         }
