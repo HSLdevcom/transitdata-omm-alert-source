@@ -48,7 +48,7 @@ public class AlertState {
         return true;
     }
 
-    private static List<Bulletin> asSorted(List<Bulletin> list) {
+    static List<Bulletin> asSorted(List<Bulletin> list) {
         return list.stream().sorted(Comparator.comparingLong(bulletin -> bulletin.id)).collect(Collectors.toList());
     }
 
