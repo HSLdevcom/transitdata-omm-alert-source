@@ -63,15 +63,15 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
         return bulletins;
     }
 
-    TranslatedString parseTitles(ResultSet resultSet) throws SQLException {
+    static TranslatedString parseTitles(ResultSet resultSet) throws SQLException {
         return parseText(resultSet,"title_");
     }
 
-    TranslatedString parseDescriptions(ResultSet resultSet) throws SQLException {
+    static TranslatedString parseDescriptions(ResultSet resultSet) throws SQLException {
         return parseText(resultSet,"text_");
     }
 
-    private TranslatedString parseText(final ResultSet resultSet, final String columnPrefix) throws SQLException {
+    private static TranslatedString parseText(final ResultSet resultSet, final String columnPrefix) throws SQLException {
         TranslatedString.Builder builder = TranslatedString.newBuilder();
 
         String[] suffixes = {Bulletin.Language.en.toString(), Bulletin.Language.fi.toString(), Bulletin.Language.sv.toString()};

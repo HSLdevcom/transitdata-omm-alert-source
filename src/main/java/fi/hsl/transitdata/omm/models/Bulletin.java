@@ -3,9 +3,11 @@ package fi.hsl.transitdata.omm.models;
 import com.google.transit.realtime.GtfsRealtime;
 
 import java.time.LocalDateTime;
+import java.util.LinkedList;
 import java.util.List;
 
 public class Bulletin {
+
     public enum Category {
         //TODO check if contains all
         EarlierDisruption,
@@ -112,6 +114,26 @@ public class Bulletin {
     public List<Long> affectedStopGids;
     public GtfsRealtime.TranslatedString descriptions;
     public GtfsRealtime.TranslatedString headers;
+
+    public Bulletin() {}
+
+    public Bulletin(Bulletin other) {
+        id = other.id;
+        category = other.category;
+        impact = other.impact;
+        lastModified = other.lastModified;
+        validFrom = other.validFrom;
+        validTo = other.validTo;
+        affectsAllRoutes = other.affectsAllRoutes;
+        affectsAllStops = other.affectsAllStops;
+        if (other.affectedLineGids != null)
+            affectedLineGids = new LinkedList<>(other.affectedLineGids);
+        if (other.affectedStopGids != null)
+            affectedStopGids = new LinkedList<>(other.affectedStopGids);
+        descriptions = other.descriptions;
+        headers = other.headers;
+    }
+
 
     @Override
     public boolean equals(Object other) {

@@ -40,7 +40,7 @@ public class MockOmmConnector {
 
     private List<Bulletin> parseBulletinsFromTsvContent(List<String> lines) throws Exception {
         //We've used tabs as separators, because content includes commas.
-        return lines.stream().map(MockOmmConnector::parseBulletinFromTsv).collect(Collectors.toList());
+        return lines.stream().map(BulletinDAOMock::parseBulletinFromTsv).collect(Collectors.toList());
     }
 
     private List<String> readFileContentFromResources(String filename) throws Exception {
@@ -63,20 +63,6 @@ public class MockOmmConnector {
         }
         return out;
     }
-
-    static Bulletin parseBulletinFromTsv(String line) {
-        String[] split = line.split("\t");
-        int index = 0;
-        Bulletin b = new Bulletin();
-        b.id = Long.parseLong(split[index++]);
-        b.impact = Bulletin.Impact.fromString(split[index++]);
-        b.category = Bulletin.Category.fromString(split[index++]);
-        b.lastModified = DAOImplBase.parseOmmLocalDateTime(split[index++]);
-
-
-        return b;
-    }
-
 
     public BulletinDAO getBulletinDAO() {
         return bulletinDAO;

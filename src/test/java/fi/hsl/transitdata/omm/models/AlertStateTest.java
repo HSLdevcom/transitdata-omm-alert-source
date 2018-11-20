@@ -1,11 +1,18 @@
 package fi.hsl.transitdata.omm.models;
 
+import com.google.transit.realtime.GtfsRealtime;
 import fi.hsl.transitdata.omm.db.BulletinDAOMock;
 import fi.hsl.transitdata.omm.db.MockOmmConnector;
 import org.junit.Test;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 import static org.junit.Assert.*;
 
@@ -37,15 +44,150 @@ public class AlertStateTest {
 
     }
 
-    @Test
-    public void testEquals() throws Exception {
+    private List<Bulletin> readDefaultTestBulletins() throws Exception {
         MockOmmConnector connector = MockOmmConnector.newInstance("2018_11_alert_dump.tsv");
-        List<Bulletin> bulletins = connector.getBulletinDAO().getActiveBulletins();
+        return connector.getBulletinDAO().getActiveBulletins();
+    }
 
+    @Test
+    public void testEqualsForSameLists() throws Exception {
+        List<Bulletin> bulletins = readDefaultTestBulletins();
         AlertState first = new AlertState(bulletins);
-        AlertState second = new AlertState(bulletins);
+
+        ArrayList<Bulletin> copy = new ArrayList<>(bulletins);
+        AlertState second = new AlertState(copy);
 
         assertEquals(first, second);
+    }
 
+    @Test
+    public void testEqualsForOrderingChanged() throws Exception {
+        //We don't care about the order, just about the actual state.
+        List<Bulletin> bulletins = readDefaultTestBulletins();
+        AlertState first = new AlertState(bulletins);
+
+        ArrayList<Bulletin> shuffled = new ArrayList<>(bulletins);
+        Collections.shuffle(shuffled);
+        ArrayList<Bulletin> copyOfShuffled = new ArrayList<>(shuffled);
+
+        AlertState second = new AlertState(shuffled);
+
+        assertNotEquals(bulletins, shuffled); //Ordering different -> Lists not equal
+        assertEquals(first, second); // we don't care about ordering within the state
+        assertEquals(shuffled, copyOfShuffled); // AlertState.equals should not change the underlying lists
+    }
+
+    @Test
+    public void testEqualsWhenOneRemoved() throws Exception {
+        List<Bulletin> bulletins = readDefaultTestBulletins();
+        AlertState first = new AlertState(bulletins);
+
+        ArrayList<Bulletin> copy = new ArrayList<>(bulletins);
+        copy.remove(0);
+        AlertState second = new AlertState(copy);
+
+        assertNotEquals(first, second);
+    }
+
+    @Test
+    public void testEqualsWhenSomethingChanged() throws Exception {
+        List<Bulletin> firstBulletins = readDefaultTestBulletins();
+        final AlertState first = new AlertState(firstBulletins);
+
+        final List<Bulletin> secondBulletins = readDefaultTestBulletins();
+
+        //Change fields one at the time and make sure each change gets noticed
+        AlertState modified;
+
+        modified = createModifiedAlertState(secondBulletins, bulletin -> {
+            bulletin.impact = Bulletin.Impact.DisruptionRoute;
+            return bulletin;
+        });
+        assertNotEquals(first, modified);
+
+        modified = createModifiedAlertState(secondBulletins, bulletin -> {
+            bulletin.category = Bulletin.Category.RoadClosed;
+            return bulletin;
+        });
+        assertNotEquals(first, modified);
+
+        modified = createModifiedAlertState(secondBulletins, bulletin -> {
+            bulletin.id = 404L;
+            return bulletin;
+        });
+        assertNotEquals(first, modified);
+
+        modified = createModifiedAlertState(secondBulletins, bulletin -> {
+            bulletin.lastModified = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
+            return bulletin;
+        });
+        assertNotEquals(first, modified);
+
+        modified = createModifiedAlertState(secondBulletins, bulletin -> {
+            bulletin.validFrom = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
+            return bulletin;
+        });
+        assertNotEquals(first, modified);
+
+        modified = createModifiedAlertState(secondBulletins, bulletin -> {
+            bulletin.validTo = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
+            return bulletin;
+        });
+        assertNotEquals(first, modified);
+
+        modified = createModifiedAlertState(secondBulletins, bulletin -> {
+            bulletin.affectsAllRoutes = !bulletin.affectsAllRoutes;
+            return bulletin;
+        });
+        assertNotEquals(first, modified);
+
+        modified = createModifiedAlertState(secondBulletins, bulletin -> {
+            bulletin.affectsAllStops = !bulletin.affectsAllStops;
+            return bulletin;
+        });
+        assertNotEquals(first, modified);
+
+        modified = createModifiedAlertState(secondBulletins, bulletin -> {
+            bulletin.affectedStopGids.add(123456789L);
+            return bulletin;
+        });
+        assertNotEquals(first, modified);
+
+        modified = createModifiedAlertState(secondBulletins, bulletin -> {
+            bulletin.affectedLineGids.add(987654321L);
+            return bulletin;
+        });
+        assertNotEquals(first, modified);
+
+        modified = createModifiedAlertState(secondBulletins, bulletin -> {
+            GtfsRealtime.TranslatedString.Translation changedTranslation = bulletin.descriptions.getTranslation(0).toBuilder().setText("changing this").build();
+            bulletin.descriptions = bulletin.descriptions.toBuilder().removeTranslation(0).addTranslation(0, changedTranslation).build();
+            return bulletin;
+        });
+        assertNotEquals(first, modified);
+
+        modified = createModifiedAlertState(secondBulletins, bulletin -> {
+            GtfsRealtime.TranslatedString.Translation changedTranslation = bulletin.headers.getTranslation(0).toBuilder().setText("changing the header").build();
+            bulletin.headers = bulletin.headers.toBuilder().removeTranslation(0).addTranslation(0, changedTranslation).build();
+            return bulletin;
+        });
+        assertNotEquals(first, modified);
+
+        //As last let's validate our test method. State should be equal if lambda does nothing
+        AlertState unchanged = createModifiedAlertState(secondBulletins, bulletin -> bulletin);
+        assertEquals(first, unchanged);
+
+    }
+
+    private AlertState createModifiedAlertState(final List<Bulletin> secondBulletins, Function<Bulletin, Bulletin> transformer) {
+        final int indexToModify = 0;
+
+        List<Bulletin> copyList = new ArrayList<>(secondBulletins);
+
+        final Bulletin copyToModify = new Bulletin(copyList.get(indexToModify));
+        Bulletin modified = transformer.apply(copyToModify);
+        copyList.set(indexToModify, modified);
+
+        return new AlertState(copyList);
     }
 }
