@@ -48,6 +48,6 @@ public class DAOImplBase {
     }
 
     static LocalDateTime parseOmmLocalDateTime(String dt) {
-        return LocalDateTime.parse(dt, OMM_DT_FORMATTER);
+        return LocalDateTime.parse(dt.replace(" ", "T")); // Make java.sql.Timestamp ISO compatible
     }
 }
