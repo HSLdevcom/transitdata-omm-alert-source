@@ -1,6 +1,7 @@
 package fi.hsl.transitdata.omm.models;
 
 import com.google.transit.realtime.GtfsRealtime;
+import fi.hsl.transitdata.omm.OmmAlertHandler;
 import fi.hsl.transitdata.omm.db.BulletinDAOMock;
 import fi.hsl.transitdata.omm.db.DAOImplBase;
 import fi.hsl.transitdata.omm.db.MockOmmConnector;

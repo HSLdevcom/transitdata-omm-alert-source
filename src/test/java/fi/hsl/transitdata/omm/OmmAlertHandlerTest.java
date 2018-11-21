@@ -2,6 +2,7 @@ package fi.hsl.transitdata.omm;
 
 import com.google.transit.realtime.GtfsRealtime;
 import fi.hsl.transitdata.omm.db.MockOmmConnector;
+import fi.hsl.transitdata.omm.models.AlertState;
 import fi.hsl.transitdata.omm.models.Bulletin;
 import fi.hsl.transitdata.omm.models.Line;
 import fi.hsl.transitdata.omm.models.StopPoint;
@@ -59,6 +60,15 @@ public class OmmAlertHandlerTest {
         assertNotNull(msg);
         assertEquals(timestamp, msg.getHeader().getTimestamp());
         assertEquals(feedEntities.size(), msg.getEntityCount());
+    }
+
+    @Test
+    public void testTimestampConversion() throws Exception {
+        MockOmmConnector connector = readDefaultMockData();
+        List<Bulletin> bulletins = connector.getBulletinDAO().getActiveBulletins();
+        AlertState state = new AlertState(bulletins);
+        long utcMs = OmmAlertHandler.lastModifiedInUtcMs(state, TIMEZONE);
+        assertEquals(1542621762000L, utcMs);
     }
 
 }
