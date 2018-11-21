@@ -7,96 +7,134 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class Bulletin {
-    /**
-     * OTHER_DRIVER_ERROR          OTHER_CAUSE
-     ITS_SYSTEM_ERROR            TECHNICAL_PROBLEM
-     TOO_MANY_PASSENGERS         OTHER_CAUSE
-     MISPARKED_VEHICLE           OTHER_CAUSE
-     STRIKE                      STRIKE
-     TEST                        OTHER_CAUSE
-     VEHICLE_OFF_THE_ROAD        ACCIDENT
-     TRAFFIC_ACCIDENT            ACCIDENT
-     SWITCH_FAILURE              TECHNICAL_PROBLEM
-     SEIZURE                     MEDICAL_EMERGENCY
-     WEATHER                     WEATHER
-     STATE_VISIT                 OTHER_CAUSE
-     ROAD_MAINTENANCE            MAINTENANCE
-     ROAD_CLOSED                 CONSTRUCTION
-     TRACK_BLOCKED               OTHER_CAUSE
-     WEATHER_CONDITIONS          WEATHER
-     ASSAULT                     POLICE_ACTIVITY
-     TRACK_MAINTENANCE           MAINTENANCE
-     MEDICAL_INCIDENT            MEDICAL_EMERGENCY
-     EARLIER_DISRUPTION          OTHER_CAUSE
-     TECHNICAL_FAILURE           TECHNICAL_PROBLEM
-     TRAFFIC_JAM                 OTHER_CAUSE
-     OTHER                       OTHER_CAUSE
-     NO_TRAFFIC_DISRUPTION       OTHER_CAUSE
-     ACCIDENT                    ACCIDENT
-     PUBLIC_EVENT                OTHER_CAUSE
-     ROAD_TRENCH                 CONSTRUCTION
-     VEHICLE_BREAKDOWN           TECHNICAL_PROBLEM
-     POWER_FAILURE               TECHNICAL_PROBLEM
-     */
+
     public enum Category {
-        //TODO check if contains all
-        EarlierDisruption,
-        NoTrafficDisruption,
-        RoadMaintenance,
-        RoadClosed,
-        RoadTrench,
-        TrackBlocked,
-        TrafficAccident,
-        TrafficJam,
-        TechicalFailure;
+
+        OTHER_DRIVER_ERROR,
+        ITS_SYSTEM_ERROR,
+        TOO_MANY_PASSENGERS,
+        MISPARKED_VEHICLE,
+        STRIKE,
+        TEST,
+        VEHICLE_OFF_THE_ROAD,
+        TRAFFIC_ACCIDENT,
+        SWITCH_FAILURE,
+        SEIZURE,
+        WEATHER,
+        STATE_VISIT,
+        ROAD_MAINTENANCE,
+        ROAD_CLOSED,
+        TRACK_BLOCKED,
+        WEATHER_CONDITIONS,
+        ASSAULT,
+        TRACK_MAINTENANCE,
+        MEDICAL_INCIDENT,
+        EARLIER_DISRUPTION,
+        TECHNICAL_FAILURE,
+        TRAFFIC_JAM,
+        OTHER,
+        NO_TRAFFIC_DISRUPTION,
+        ACCIDENT,
+        PUBLIC_EVENT,
+        ROAD_TRENCH,
+        VEHICLE_BREAKDOWN,
+        POWER_FAILURE;
 
         public static Category fromString(String str) {
             switch (str) {
-                case "EARLIER_DISRUPTION": return EarlierDisruption;
-                case "NO_TRAFFIC_DISRUPTION": return NoTrafficDisruption;
-                case "ROAD_MAINTENANCE": return RoadMaintenance;
-                case "ROAD_CLOSED": return RoadClosed;
-                case "ROAD_TRENCH": return RoadTrench;
-                case "TRACK_BLOCKED": return TrackBlocked;
-                case "TRAFFIC_ACCIDENT": return TrafficAccident;
-                case "TRAFFIC_JAM": return TrafficJam;
-                case "TECHNICAL_FAILURE": return TechicalFailure;
+                case "OTHER_DRIVER_ERROR": return OTHER_DRIVER_ERROR;
+                case "ITS_SYSTEM_ERROR": return ITS_SYSTEM_ERROR;
+                case "TOO_MANY_PASSENGERS": return TOO_MANY_PASSENGERS;
+                case "MISPARKED_VEHICLE": return MISPARKED_VEHICLE;
+                case "STRIKE": return STRIKE;
+                case "TEST": return TEST;
+                case "VEHICLE_OFF_THE_ROAD": return VEHICLE_OFF_THE_ROAD;
+                case "TRAFFIC_ACCIDENT": return TRAFFIC_ACCIDENT;
+                case "SWITCH_FAILURE": return SWITCH_FAILURE;
+                case "SEIZURE": return SEIZURE;
+                case "WEATHER": return WEATHER;
+                case "STATE_VISIT": return STATE_VISIT;
+                case "ROAD_MAINTENANCE": return ROAD_MAINTENANCE;
+                case "ROAD_CLOSED": return ROAD_CLOSED;
+                case "TRACK_BLOCKED": return TRACK_BLOCKED;
+                case "WEATHER_CONDITIONS": return WEATHER_CONDITIONS;
+                case "ASSAULT": return ASSAULT;
+                case "TRACK_MAINTENANCE": return TRACK_MAINTENANCE;
+                case "MEDICAL_INCIDENT": return MEDICAL_INCIDENT;
+                case "EARLIER_DISRUPTION": return EARLIER_DISRUPTION;
+                case "TECHNICAL_FAILURE": return TECHNICAL_FAILURE;
+                case "TRAFFIC_JAM": return TRAFFIC_JAM;
+                case "OTHER": return OTHER;
+                case "NO_TRAFFIC_DISRUPTION": return NO_TRAFFIC_DISRUPTION;
+                case "ACCIDENT": return ACCIDENT;
+                case "PUBLIC_EVENT": return PUBLIC_EVENT;
+                case "ROAD_TRENCH": return ROAD_TRENCH;
+                case "VEHICLE_BREAKDOWN": return VEHICLE_BREAKDOWN;
+                case "POWER_FAILURE": return POWER_FAILURE;
                 default: throw new IllegalArgumentException("Could not parse category from String: " + str);
             }
         }
-        //TODO DEFINE
+
         public GtfsRealtime.Alert.Cause toGtfsCause() {
             switch (this) {
-                case EarlierDisruption: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case OTHER_DRIVER_ERROR: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case ITS_SYSTEM_ERROR: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
+                case TOO_MANY_PASSENGERS: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case MISPARKED_VEHICLE: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case STRIKE: return GtfsRealtime.Alert.Cause.STRIKE;
+                case TEST: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case VEHICLE_OFF_THE_ROAD: return GtfsRealtime.Alert.Cause.ACCIDENT;
+                case TRAFFIC_ACCIDENT: return GtfsRealtime.Alert.Cause.ACCIDENT;
+                case SWITCH_FAILURE: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
+                case SEIZURE: return GtfsRealtime.Alert.Cause.MEDICAL_EMERGENCY;
+                case WEATHER: return GtfsRealtime.Alert.Cause.WEATHER;
+                case STATE_VISIT: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case ROAD_MAINTENANCE: return GtfsRealtime.Alert.Cause.MAINTENANCE;
+                case ROAD_CLOSED: return GtfsRealtime.Alert.Cause.CONSTRUCTION;
+                case TRACK_BLOCKED: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case WEATHER_CONDITIONS: return GtfsRealtime.Alert.Cause.WEATHER;
+                case ASSAULT: return GtfsRealtime.Alert.Cause.POLICE_ACTIVITY;
+                case TRACK_MAINTENANCE: return GtfsRealtime.Alert.Cause.MAINTENANCE;
+                case MEDICAL_INCIDENT: return GtfsRealtime.Alert.Cause.MEDICAL_EMERGENCY;
+                case EARLIER_DISRUPTION: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case TECHNICAL_FAILURE: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
+                case TRAFFIC_JAM: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case OTHER: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case NO_TRAFFIC_DISRUPTION: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case ACCIDENT: return GtfsRealtime.Alert.Cause.ACCIDENT;
+                case PUBLIC_EVENT: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case ROAD_TRENCH: return GtfsRealtime.Alert.Cause.CONSTRUCTION;
+                case VEHICLE_BREAKDOWN: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
+                case POWER_FAILURE: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
                 default: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
             }
         }
     }
 
     public enum Impact {
-        Cancelled,
-        Delayed,
-        DeviatingSchedule,
-        DisruptionRoute,
-        IrregularDepartures,
-        PossibleDeviations,
-        PossiblyDelayed,
-        ReducedTransport,
-        ReturningToNormal,
-        VendingMachineOutOfOrder;
+        CANCELLED,
+        DELAYED,
+        DEVIATING_SCHEDULE,
+        DISRUPTION_ROUTE,
+        IRREGULAR_DEPARTURES,
+        POSSIBLE_DEVIATIONS,
+        POSSIBLY_DELAYED,
+        REDUCED_TRANSPORT,
+        RETURNING_TO_NORMAL,
+        VENDING_MACHINE_OUT_OF_ORDER;
 
         public static Impact fromString(String str) {
             switch (str) {
-                case "CANCELLED": return Cancelled;
-                case "DELAYED": return Delayed;
-                case "DEVIATING_SCHEDULE": return DeviatingSchedule;
-                case "DISRUPTION_ROUTE": return DisruptionRoute;
-                case "IRREGULAR_DEPARTURES": return IrregularDepartures;
-                case "POSSIBLE_DEVIATIONS": return PossibleDeviations;
-                case "POSSIBLY_DELAYED": return PossiblyDelayed;
-                case "REDUCED_TRANSPORT": return ReducedTransport;
-                case "RETURNING_TO_NORMAL": return ReturningToNormal;
-                case "VENDING_MACHINE_OUT_OF_ORDER": return VendingMachineOutOfOrder;
+                case "CANCELLED": return CANCELLED;
+                case "DELAYED": return DELAYED;
+                case "DEVIATING_SCHEDULE": return DEVIATING_SCHEDULE;
+                case "DISRUPTION_ROUTE": return DISRUPTION_ROUTE;
+                case "IRREGULAR_DEPARTURES": return IRREGULAR_DEPARTURES;
+                case "POSSIBLE_DEVIATIONS": return POSSIBLE_DEVIATIONS;
+                case "POSSIBLY_DELAYED": return POSSIBLY_DELAYED;
+                case "REDUCED_TRANSPORT": return REDUCED_TRANSPORT;
+                case "RETURNING_TO_NORMAL": return RETURNING_TO_NORMAL;
+                case "VENDING_MACHINE_OUT_OF_ORDER": return VENDING_MACHINE_OUT_OF_ORDER;
                 default: throw new IllegalArgumentException("Could not parse Impact from String: " + str);
             }
         }
@@ -115,16 +153,16 @@ public class Bulletin {
          */
         public GtfsRealtime.Alert.Effect toGtfsEffect() {
             switch (this) {
-                case Cancelled: return GtfsRealtime.Alert.Effect.NO_SERVICE;
-                case Delayed: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
-                case DeviatingSchedule: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
-                case DisruptionRoute: return GtfsRealtime.Alert.Effect.DETOUR;
-                case IrregularDepartures: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
-                case PossibleDeviations: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
-                case PossiblyDelayed: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
-                case ReducedTransport: return GtfsRealtime.Alert.Effect.REDUCED_SERVICE;
-                case ReturningToNormal: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
-                case VendingMachineOutOfOrder: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
+                case CANCELLED: return GtfsRealtime.Alert.Effect.NO_SERVICE;
+                case DELAYED: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
+                case DEVIATING_SCHEDULE: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
+                case DISRUPTION_ROUTE: return GtfsRealtime.Alert.Effect.DETOUR;
+                case IRREGULAR_DEPARTURES: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
+                case POSSIBLE_DEVIATIONS: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
+                case POSSIBLY_DELAYED: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
+                case REDUCED_TRANSPORT: return GtfsRealtime.Alert.Effect.REDUCED_SERVICE;
+                case RETURNING_TO_NORMAL: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
+                case VENDING_MACHINE_OUT_OF_ORDER: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
                 default: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
             }
         }

@@ -98,13 +98,13 @@ public class AlertStateTest {
         AlertState modified;
 
         modified = createModifiedAlertState(secondBulletins, bulletin -> {
-            bulletin.impact = Bulletin.Impact.DisruptionRoute;
+            bulletin.impact = Bulletin.Impact.DISRUPTION_ROUTE;
             return bulletin;
         });
         assertNotEquals(first, modified);
 
         modified = createModifiedAlertState(secondBulletins, bulletin -> {
-            bulletin.category = Bulletin.Category.RoadClosed;
+            bulletin.category = Bulletin.Category.ROAD_CLOSED;
             return bulletin;
         });
         assertNotEquals(first, modified);

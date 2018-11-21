@@ -85,19 +85,8 @@ public class BulletinDAOMock implements BulletinDAO {
     public static Bulletin newMockBulletin(long id) {
         Bulletin b = new Bulletin();
         b.id = id;
-        b.category = Bulletin.Category.TrafficAccident;
-        b.impact = Bulletin.Impact.Delayed;
-        /*b.lastModified =
-        public Bulletin.Impact impact;
-        public LocalDateTime lastModified;
-        public LocalDateTime validFrom;
-        public LocalDateTime validTo;
-        public boolean affectsAllRoutes;
-        public boolean affectsAllStops;
-        public List<Long> affectedLineGids;
-        public List<Long> affectedStopGids;
-        public GtfsRealtime.TranslatedString descriptions;
-        public GtfsRealtime.TranslatedString headers;*/
+        b.category = Bulletin.Category.TRAFFIC_ACCIDENT;
+        b.impact = Bulletin.Impact.DELAYED;
         return b;
     }
 
