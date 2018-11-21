@@ -53,26 +53,35 @@ public class OmmAlertHandler {
         AlertState latestState = new AlertState(bulletins);
 
         if (!latestState.equals(previousState)) {
+            log.info("Service Alerts changed, creating new FeedMessage.");
+
             Map<Long, Line> lines = lineDAO.getAllLines();
             Map<Long, StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
-            // We want to keep Pulsar internal timestamps as accurate as possible (ms) but GTFS-RT expects seconds
-            Optional<LocalDateTime> lastModified = latestState.lastModified();
-            if (!lastModified.isPresent()) {
-                log.error("Could not determine last modified timestamp from AlertState! Using currentTimeMillis().");
-            }
-            final long timestampUtcMs = lastModified.map(localDateTime -> toUtcEpochMs(localDateTime)).orElse(System.currentTimeMillis());
+
+            final long timestampUtcMs = lastModifiedInUtcMs(latestState, timeZone);
             final long timestampUtcSecs = timestampUtcMs / 1000;
-            GtfsRealtime.FeedMessage message = createFeedMessage(bulletins, lines, stopPoints, timestampUtcSecs);
+
+            List<FeedEntity> entities = createFeedEntities(bulletins, lines, stopPoints, timeZone);
+            GtfsRealtime.FeedMessage message = createFeedMessage(entities, timestampUtcSecs);
 
             sendPulsarMessage(message, timestampUtcMs);
+        } else {
+            log.info("No changes to current Service Alerts.");
         }
         previousState = latestState;
     }
 
+    static long lastModifiedInUtcMs(AlertState state, String timezone) {
+        // We want to keep Pulsar internal timestamps as accurate as possible (ms) but GTFS-RT expects seconds
+        Optional<LocalDateTime> lastModified = state.lastModified();
+        if (!lastModified.isPresent()) {
+            log.error("Could not determine last modified timestamp from AlertState! Using currentTimeMillis().");
+        }
+        return lastModified.map(localDateTime -> toUtcEpochMs(localDateTime, timezone)).orElse(System.currentTimeMillis());
+    }
 
-    FeedMessage createFeedMessage(List<Bulletin> bulletins, Map<Long, Line> lines, Map<Long, StopPoint> stopPoints, long timestampUtcSecs) {
-        List<GtfsRealtime.FeedEntity> entities = createFeedEntities(bulletins, lines, stopPoints);
 
+    static FeedMessage createFeedMessage(List<FeedEntity> entities, long timestampUtcSecs) {
         GtfsRealtime.FeedHeader header = GtfsRealtime.FeedHeader.newBuilder()
                 .setGtfsRealtimeVersion("2.0")
                 .setIncrementality(FeedHeader.Incrementality.FULL_DATASET)
@@ -85,9 +94,9 @@ public class OmmAlertHandler {
                 .build();
     }
 
-    List<FeedEntity> createFeedEntities(final List<Bulletin> bulletins, final Map<Long, Line> lines, final Map<Long, StopPoint> stopPoints) {
+    static List<FeedEntity> createFeedEntities(final List<Bulletin> bulletins, final Map<Long, Line> lines, final Map<Long, StopPoint> stopPoints, final String timeZone) {
         return bulletins.stream().map(bulletin -> {
-            final Optional<Alert> maybeAlert = createAlert(bulletin, lines, stopPoints);
+            final Optional<Alert> maybeAlert = createAlert(bulletin, lines, stopPoints, timeZone);
             return maybeAlert.map(alert -> {
                 FeedEntity.Builder builder = FeedEntity.newBuilder();
                 builder.setId(Long.toString(bulletin.id));
@@ -99,14 +108,12 @@ public class OmmAlertHandler {
           .collect(Collectors.toList());
     }
 
-
-    // TODO Refactor these time conversion methods to Commons
-    public long toUtcEpochSecs(LocalDateTime localTimestamp) {
-        return toUtcEpochMs(localTimestamp, timeZone) / 1000;
-    }
-
     public long toUtcEpochMs(LocalDateTime localTimestamp) {
         return toUtcEpochMs(localTimestamp, timeZone);
+    }
+
+    private static long toUtcEpochSecs(LocalDateTime localTimestamp, String zoneId) {
+        return toUtcEpochMs(localTimestamp, zoneId) / 1000;
     }
 
     private static long toUtcEpochMs(LocalDateTime localTimestamp, String zoneId) {
@@ -114,11 +121,11 @@ public class OmmAlertHandler {
         return localTimestamp.atZone(zone).toInstant().toEpochMilli();
     }
 
-    Optional<Alert> createAlert(Bulletin bulletin, Map<Long, Line> lines, Map<Long, StopPoint> stopPoints) {
+    static Optional<Alert> createAlert(Bulletin bulletin, Map<Long, Line> lines, Map<Long, StopPoint> stopPoints, final String timezone) {
         Optional<Alert> maybeAlert = Optional.empty();
         try {
-            long startInUtcSecs = toUtcEpochSecs(bulletin.validFrom);
-            long stopInUtcSecs = toUtcEpochSecs(bulletin.validTo);
+            long startInUtcSecs = toUtcEpochSecs(bulletin.validFrom, timezone);
+            long stopInUtcSecs = toUtcEpochSecs(bulletin.validTo, timezone);
 
             TimeRange timeRange = TimeRange.newBuilder()
                     .setStart(startInUtcSecs)
