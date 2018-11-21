@@ -2,16 +2,14 @@ package fi.hsl.transitdata.omm.models;
 
 import com.google.transit.realtime.GtfsRealtime;
 import fi.hsl.transitdata.omm.db.BulletinDAOMock;
+import fi.hsl.transitdata.omm.db.DAOImplBase;
 import fi.hsl.transitdata.omm.db.MockOmmConnector;
 import org.junit.Test;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 
 import static org.junit.Assert.*;
@@ -189,5 +187,15 @@ public class AlertStateTest {
         copyList.set(indexToModify, modified);
 
         return new AlertState(copyList);
+    }
+
+    @Test
+    public void testLastModified() throws Exception {
+        List<Bulletin> bulletins = readDefaultTestBulletins();
+        AlertState state = new AlertState(bulletins);
+        Optional<LocalDateTime> maybeDt = state.lastModified();
+        assertTrue(maybeDt.isPresent());
+        String dt = DAOImplBase.OMM_DT_FORMATTER.format(maybeDt.get());
+        assertEquals("2018-11-19 12:02:42", dt);
     }
 }

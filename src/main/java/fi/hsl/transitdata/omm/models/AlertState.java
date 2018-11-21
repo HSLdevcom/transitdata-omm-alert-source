@@ -1,6 +1,9 @@
 package fi.hsl.transitdata.omm.models;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class AlertState {
@@ -46,6 +49,12 @@ public class AlertState {
             }
         }
         return true;
+    }
+
+    public Optional<LocalDateTime> lastModified() {
+        return alerts.stream()
+                .map(bulletin -> bulletin.lastModified)
+                .max(Comparator.naturalOrder());
     }
 
     static List<Bulletin> asSorted(List<Bulletin> list) {
