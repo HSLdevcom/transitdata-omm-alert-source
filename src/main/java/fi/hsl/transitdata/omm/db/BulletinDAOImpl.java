@@ -98,6 +98,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
 
     private String createQuery() {
         return "SELECT B.bulletins_id" +
+                "    ,PBMD.impact" +
                 "    ,B.category" +
                 "    ,B.last_modified" +
                 "    ,B.valid_from" +
