@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source.svg?branch=master)](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source)
+
 # Transitdata-omm-alert-source
 
 This project is part of the [Transitdata Pulsar-pipeline](https://github.com/HSLdevcom/transitdata).
