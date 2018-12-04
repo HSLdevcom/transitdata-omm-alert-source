@@ -5,6 +5,7 @@ import fi.hsl.common.pulsar.PulsarApplicationContext;
 import fi.hsl.common.transitdata.TransitdataProperties;
 import fi.hsl.transitdata.omm.db.BulletinDAO;
 import fi.hsl.transitdata.omm.db.LineDAO;
+import fi.hsl.transitdata.omm.db.OmmDbConnector;
 import fi.hsl.transitdata.omm.db.StopPointDAO;
 import fi.hsl.transitdata.omm.models.AlertState;
 import fi.hsl.transitdata.omm.models.Bulletin;
@@ -35,40 +36,47 @@ public class OmmAlertHandler {
     private final Producer<byte[]> producer;
     private AlertState previousState = null;
 
-    BulletinDAO bulletinDAO;
-    LineDAO lineDAO;
-    StopPointDAO stopPointDAO;
+    OmmDbConnector ommConnector;
 
-    public OmmAlertHandler(PulsarApplicationContext context, BulletinDAO bulletinDAO, LineDAO lineDAO, StopPointDAO stopPointDAO) {
+    public OmmAlertHandler(PulsarApplicationContext context, OmmDbConnector omm) {
         producer = context.getProducer();
         timeZone = context.getConfig().getString("omm.timezone");
-
-        this.bulletinDAO = bulletinDAO;
-        this.lineDAO = lineDAO;
-        this.stopPointDAO = stopPointDAO;
+        ommConnector = omm;
     }
 
-    public void pollAndSend() throws SQLException, PulsarClientException {
-        List<Bulletin> bulletins = bulletinDAO.getActiveBulletins();
-        AlertState latestState = new AlertState(bulletins);
+    public void pollAndSend() throws SQLException, PulsarClientException, Exception {
+        try {
+            //For some reason the connection seem to be flaky, let's reconnect on each request.
+            ommConnector.connect();
 
-        if (!latestState.equals(previousState)) {
-            log.info("Service Alerts changed, creating new FeedMessage.");
+            BulletinDAO bulletinDAO = ommConnector.getBulletinDAO();
+            LineDAO lineDAO = ommConnector.getLineDAO();
+            StopPointDAO stopPointDAO = ommConnector.getStopPointDAO();
 
-            Map<Long, Line> lines = lineDAO.getAllLines();
-            Map<Long, StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
+            List<Bulletin> bulletins = bulletinDAO.getActiveBulletins();
+            AlertState latestState = new AlertState(bulletins);
 
-            final long timestampUtcMs = lastModifiedInUtcMs(latestState, timeZone);
-            final long timestampUtcSecs = timestampUtcMs / 1000;
+            if (!latestState.equals(previousState)) {
+                log.info("Service Alerts changed, creating new FeedMessage.");
 
-            List<FeedEntity> entities = createFeedEntities(bulletins, lines, stopPoints, timeZone);
-            GtfsRealtime.FeedMessage message = createFeedMessage(entities, timestampUtcSecs);
+                Map<Long, Line> lines = lineDAO.getAllLines();
+                Map<Long, StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
 
-            sendPulsarMessage(message, timestampUtcMs);
-        } else {
-            log.info("No changes to current Service Alerts.");
+                final long timestampUtcMs = lastModifiedInUtcMs(latestState, timeZone);
+                final long timestampUtcSecs = timestampUtcMs / 1000;
+
+                List<FeedEntity> entities = createFeedEntities(bulletins, lines, stopPoints, timeZone);
+                GtfsRealtime.FeedMessage message = createFeedMessage(entities, timestampUtcSecs);
+
+                sendPulsarMessage(message, timestampUtcMs);
+            } else {
+                log.info("No changes to current Service Alerts.");
+            }
+            previousState = latestState;
         }
-        previousState = latestState;
+        finally {
+            ommConnector.close();
+        }
     }
 
     static long lastModifiedInUtcMs(AlertState state, String timezone) {
