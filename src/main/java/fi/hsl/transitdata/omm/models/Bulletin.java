@@ -155,10 +155,10 @@ public class Bulletin {
             switch (this) {
                 case CANCELLED: return GtfsRealtime.Alert.Effect.NO_SERVICE;
                 case DELAYED: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
-                case DEVIATING_SCHEDULE: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
+                case DEVIATING_SCHEDULE: return GtfsRealtime.Alert.Effect.MODIFIED_SERVICE;
                 case DISRUPTION_ROUTE: return GtfsRealtime.Alert.Effect.DETOUR;
                 case IRREGULAR_DEPARTURES: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
-                case POSSIBLE_DEVIATIONS: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
+                case POSSIBLE_DEVIATIONS: return GtfsRealtime.Alert.Effect.MODIFIED_SERVICE;
                 case POSSIBLY_DELAYED: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
                 case REDUCED_TRANSPORT: return GtfsRealtime.Alert.Effect.REDUCED_SERVICE;
                 case RETURNING_TO_NORMAL: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
