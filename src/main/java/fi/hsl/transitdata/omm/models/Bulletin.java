@@ -38,7 +38,10 @@ public class Bulletin {
         PUBLIC_EVENT,
         ROAD_TRENCH,
         VEHICLE_BREAKDOWN,
-        POWER_FAILURE;
+        POWER_FAILURE,
+        STAFF_DEFICIT,
+        DISTURBANCE,
+        VEHICLE_DEFICIT;
 
         public static Category fromString(String str) {
             switch (str) {
@@ -71,6 +74,9 @@ public class Bulletin {
                 case "ROAD_TRENCH": return ROAD_TRENCH;
                 case "VEHICLE_BREAKDOWN": return VEHICLE_BREAKDOWN;
                 case "POWER_FAILURE": return POWER_FAILURE;
+                case "STAFF_DEFICIT": return STAFF_DEFICIT;
+                case "DISTURBANCE": return DISTURBANCE;
+                case "VEHICLE_DEFICIT": return VEHICLE_DEFICIT;
                 default: throw new IllegalArgumentException("Could not parse category from String: " + str);
             }
         }
@@ -106,7 +112,10 @@ public class Bulletin {
                 case ROAD_TRENCH: return GtfsRealtime.Alert.Cause.CONSTRUCTION;
                 case VEHICLE_BREAKDOWN: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
                 case POWER_FAILURE: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
-                default: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case STAFF_DEFICIT: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case DISTURBANCE: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
+                case VEHICLE_DEFICIT: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
+                default: return GtfsRealtime.Alert.Cause.UNKNOWN_CAUSE;
             }
         }
     }
