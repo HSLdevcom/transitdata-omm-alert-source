@@ -1,12 +1,13 @@
 package fi.hsl.transitdata.omm.db;
 
+import com.typesafe.config.Config;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 
-public class OmmDbConnector {
+public class OmmDbConnector implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(OmmDbConnector.class);
 
@@ -16,18 +17,30 @@ public class OmmDbConnector {
     private LineDAO lineDAO;
     private StopPointDAO stopPointDAO;
 
-    private OmmDbConnector(PulsarApplicationContext context, Connection connection) {
-        timezone = context.getConfig().getString("omm.timezone");
+    private Connection connection;
+    private String connectionString;
+
+    public OmmDbConnector(Config config, String jdbcConnectionString) {
+        timezone = config.getString("omm.timezone");
         log.info("Using timezone " + timezone);
 
+        connectionString = jdbcConnectionString;
+    }
+
+    public void connect() throws SQLException {
+        connection = DriverManager.getConnection(connectionString);
         bulletinDAO = new BulletinDAOImpl(connection, timezone);
         stopPointDAO = new StopPointDAOImpl(connection, timezone);
         lineDAO = new LineDAOImpl(connection);
     }
 
-    public static OmmDbConnector newInstance(PulsarApplicationContext context, String jdbcConnectionString) throws SQLException {
-        Connection connection = DriverManager.getConnection(jdbcConnectionString);
-        return new OmmDbConnector(context, connection);
+    @Override
+    public void close() throws Exception {
+        bulletinDAO = null;
+        stopPointDAO = null;
+        lineDAO = null;
+        connection.close();
+
     }
 
     public BulletinDAO getBulletinDAO() {
