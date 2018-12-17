@@ -28,8 +28,8 @@ public class BulletinDAOMock implements BulletinDAO {
         b.impact = Bulletin.Impact.fromString(split[index++]);
         b.category = Bulletin.Category.fromString(split[index++]);
         b.lastModified = DAOImplBase.parseOmmLocalDateTime(split[index++]);
-        b.validFrom = DAOImplBase.parseOmmLocalDateTime(split[index++]);
-        b.validTo = DAOImplBase.parseOmmLocalDateTime(split[index++]);
+        b.validFrom = DAOImplBase.parseNullableOmmLocalDateTime(split[index++]);
+        b.validTo = DAOImplBase.parseNullableOmmLocalDateTime(split[index++]);
         b.affectsAllRoutes = Boolean.parseBoolean(split[index++]);
         b.affectsAllStops = Boolean.parseBoolean(split[index++]);
         b.affectedLineGids = BulletinDAOImpl.parseListFromCommaSeparatedString(split[index++]);

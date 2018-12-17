@@ -123,13 +123,13 @@ public class AlertStateTest {
         assertNotEquals(first, modified);
 
         modified = createModifiedAlertState(secondBulletins, bulletin -> {
-            bulletin.validFrom = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
+            bulletin.validFrom = Optional.of(LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault()));
             return bulletin;
         });
         assertNotEquals(first, modified);
 
         modified = createModifiedAlertState(secondBulletins, bulletin -> {
-            bulletin.validTo = LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault());
+            bulletin.validTo = Optional.of(LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault()));
             return bulletin;
         });
         assertNotEquals(first, modified);

@@ -5,6 +5,7 @@ import com.google.transit.realtime.GtfsRealtime;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 public class Bulletin {
 
@@ -130,9 +131,13 @@ public class Bulletin {
         POSSIBLY_DELAYED,
         REDUCED_TRANSPORT,
         RETURNING_TO_NORMAL,
-        VENDING_MACHINE_OUT_OF_ORDER;
+        VENDING_MACHINE_OUT_OF_ORDER,
+        NULL;
 
         public static Impact fromString(String str) {
+            if (str == null) {
+                return NULL; //This can be null in the database schema.
+            }
             switch (str) {
                 case "CANCELLED": return CANCELLED;
                 case "DELAYED": return DELAYED;
@@ -172,6 +177,7 @@ public class Bulletin {
                 case REDUCED_TRANSPORT: return GtfsRealtime.Alert.Effect.REDUCED_SERVICE;
                 case RETURNING_TO_NORMAL: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
                 case VENDING_MACHINE_OUT_OF_ORDER: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
+                case NULL: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
                 default: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
             }
         }
@@ -187,8 +193,8 @@ public class Bulletin {
     public Category category;
     public Impact impact;
     public LocalDateTime lastModified;
-    public LocalDateTime validFrom;
-    public LocalDateTime validTo;
+    public Optional<LocalDateTime> validFrom;
+    public Optional<LocalDateTime> validTo;
     public boolean affectsAllRoutes;
     public boolean affectsAllStops;
     public List<Long> affectedLineGids;

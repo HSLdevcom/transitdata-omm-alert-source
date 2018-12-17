@@ -72,7 +72,7 @@ public class BulletinTest {
     @Test
     public void testImpactToGtfsEnum() {
         List<Bulletin.Impact> all = Arrays.asList(Bulletin.Impact.values());
-        assertEquals(10, all.size());
+        assertEquals(11, all.size());
         for (Bulletin.Impact i: all) {
             assertNotNull(i.toGtfsEffect());
         }
