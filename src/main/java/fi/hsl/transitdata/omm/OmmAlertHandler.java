@@ -132,16 +132,23 @@ public class OmmAlertHandler {
     static Optional<Alert> createAlert(Bulletin bulletin, Map<Long, Line> lines, Map<Long, StopPoint> stopPoints, final String timezone) {
         Optional<Alert> maybeAlert = Optional.empty();
         try {
-            long startInUtcSecs = toUtcEpochSecs(bulletin.validFrom, timezone);
-            long stopInUtcSecs = toUtcEpochSecs(bulletin.validTo, timezone);
+            Optional<Long> startInUtcSecs = bulletin.validFrom.map(from -> toUtcEpochSecs(from, timezone));
+            Optional<Long> stopInUtcSecs = bulletin.validTo.map(to -> toUtcEpochSecs(to, timezone));
 
-            TimeRange timeRange = TimeRange.newBuilder()
-                    .setStart(startInUtcSecs)
-                    .setEnd(stopInUtcSecs)
-                    .build();
+            Optional<TimeRange> timeRange = startInUtcSecs.flatMap(start ->
+                    stopInUtcSecs.map(stop ->
+                        TimeRange.newBuilder()
+                                .setStart(start)
+                                .setEnd(stop)
+                                .build()
+            ));
 
             final Alert.Builder builder = Alert.newBuilder();
-            builder.addActivePeriod(timeRange);
+            if (timeRange.isPresent()) {
+                builder.addActivePeriod(timeRange.get());
+            } else {
+                log.error("No timerange specified for bulletin {}", bulletin.id);
+            }
             builder.setCause(bulletin.category.toGtfsCause());
             builder.setEffect(bulletin.impact.toGtfsEffect());
             builder.setDescriptionText(bulletin.descriptions);

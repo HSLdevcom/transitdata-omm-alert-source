@@ -46,11 +46,12 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
             Bulletin bulletin = new Bulletin();
 
             bulletin.id = resultSet.getLong("bulletins_id");
+            log.debug("Handling bulletin id {}", bulletin.id);
             bulletin.category = Bulletin.Category.fromString(resultSet.getString("category"));
             bulletin.impact = Bulletin.Impact.fromString(resultSet.getString("impact"));
             bulletin.lastModified = parseOmmLocalDateTime(resultSet.getString("last_modified"));
-            bulletin.validFrom = parseOmmLocalDateTime(resultSet.getString("valid_from"));
-            bulletin.validTo = parseOmmLocalDateTime(resultSet.getString("valid_to"));
+            bulletin.validFrom = parseNullableOmmLocalDateTime(resultSet.getString("valid_from"));
+            bulletin.validTo = parseNullableOmmLocalDateTime(resultSet.getString("valid_to"));
             bulletin.affectsAllRoutes = resultSet.getInt("affects_all_routes") > 0;
             bulletin.affectsAllStops = resultSet.getInt("affects_all_stops") > 0;
             bulletin.affectedLineGids = parseListFromCommaSeparatedString(resultSet.getString("affected_route_ids"));
@@ -77,11 +78,13 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
         String[] suffixes = {Bulletin.Language.en.toString(), Bulletin.Language.fi.toString(), Bulletin.Language.sv.toString()};
         for (String language: suffixes) {
             String text = resultSet.getString(columnPrefix + language);
-            TranslatedString.Translation translation = TranslatedString.Translation.newBuilder()
-                    .setText(text)
-                    .setLanguage(language).build();
+            if (text != null) {
+                TranslatedString.Translation translation = TranslatedString.Translation.newBuilder()
+                        .setText(text)
+                        .setLanguage(language).build();
 
-            builder.addTranslation(translation);
+                builder.addTranslation(translation);
+            }
         }
         return builder.build();
     }
@@ -101,8 +104,8 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    ,PBMD.impact" +
                 "    ,B.category" +
                 "    ,B.last_modified" +
-                "    ,B.valid_from" +
-                "    ,B.valid_to" +
+                "    ,B.valid_from" + //VOI OLLA NULL
+                "    ,B.valid_to" +//VOI OLLA NULL, muttei oo koska se meillä select ehtona
                 "    ,B.affects_all_routes" +
                 "    ,B.affects_all_stops" +
                 "    ,B.affected_route_ids" +

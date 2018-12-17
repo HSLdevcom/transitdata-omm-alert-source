@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 public class DAOImplBase {
     static final Logger log = LoggerFactory.getLogger(DAOImplBase.class);
@@ -49,5 +50,13 @@ public class DAOImplBase {
 
     static LocalDateTime parseOmmLocalDateTime(String dt) {
         return LocalDateTime.parse(dt.replace(" ", "T")); // Make java.sql.Timestamp ISO compatible
+    }
+
+    static Optional<LocalDateTime> parseNullableOmmLocalDateTime(String dt) {
+        if (dt != null) {
+            return Optional.of(parseOmmLocalDateTime(dt));
+        } else {
+            return Optional.empty();
+        }
     }
 }

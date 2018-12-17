@@ -55,7 +55,7 @@ public class Main {
     }
 
     private static void closeApplication(PulsarApplication app, ScheduledExecutorService scheduler) {
-        log.warn("Closing application");
+        log.info("Closing application");
         scheduler.shutdown();
         app.close();
     }
