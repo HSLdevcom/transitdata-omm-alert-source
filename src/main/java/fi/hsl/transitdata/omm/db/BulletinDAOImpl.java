@@ -104,8 +104,8 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    ,PBMD.impact" +
                 "    ,B.category" +
                 "    ,B.last_modified" +
-                "    ,B.valid_from" + //VOI OLLA NULL
-                "    ,B.valid_to" +//VOI OLLA NULL, muttei oo koska se meillä select ehtona
+                "    ,B.valid_from" +
+                "    ,B.valid_to" +
                 "    ,B.affects_all_routes" +
                 "    ,B.affects_all_stops" +
                 "    ,B.affected_route_ids" +
