@@ -69,8 +69,6 @@ public class OmmAlertHandlerTest {
     }
 
     private void validateMockDataFirstEntity(GtfsRealtime.FeedEntity entity) {
-        //last_modified	valid_from	valid_to	affects_all_routes	affects_all_stops	affected_route_ids	affected_stop_ids	title_fi	text_fi	title_sv	text_sv	title_en	text_en
-        //2018-11-06 12:06:17	2018-11-06 12:04:00	2018-11-14 23:30:00	FALSE	FALSE	9011301022600000		Finnoonlahden pysäkki Hylkeenpyytäjäntiellä siirty	Finnoonlahden pysäkki Hylkeenpyytäjäntiellä siirtyy perjantaina 9.11. // HSL.fi	Inga trafikstörningar	Hållplats Finnoviken på Säljägarvägen flyttas på fredag 9.11. // HSL.fi	No traffic disruption	"Finnoonlahti" bus stop on Hylkeenpyytäjäntie relocated on Friday 9 November // HSL.fi
         assertTrue(entity.hasAlert());
         assertFalse(entity.hasTripUpdate());
         assertFalse(entity.hasVehicle());
