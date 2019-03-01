@@ -1,6 +1,7 @@
 package fi.hsl.transitdata.omm;
 
 import com.google.transit.realtime.GtfsRealtime;
+import fi.hsl.common.gtfsrt.FeedMessageFactory;
 import fi.hsl.transitdata.omm.db.MockOmmConnector;
 import fi.hsl.transitdata.omm.models.AlertState;
 import fi.hsl.transitdata.omm.models.Bulletin;
@@ -56,7 +57,8 @@ public class OmmAlertHandlerTest {
     public void testCreateFeedMessage() throws Exception {
         List<GtfsRealtime.FeedEntity> feedEntities = createFeedEntitiesFromDefaultMockData();
         final long timestamp = System.currentTimeMillis() / 1000;
-        GtfsRealtime.FeedMessage msg = OmmAlertHandler.createFeedMessage(feedEntities, timestamp);
+        //TODO move test to commons
+        GtfsRealtime.FeedMessage msg = FeedMessageFactory.createFullFeedMessage(feedEntities, timestamp);
 
         assertNotNull(msg);
         assertEquals(timestamp, msg.getHeader().getTimestamp());
