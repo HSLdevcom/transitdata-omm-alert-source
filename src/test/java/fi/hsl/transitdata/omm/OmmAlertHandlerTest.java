@@ -30,6 +30,7 @@ public class OmmAlertHandlerTest {
 
         List<GtfsRealtime.FeedEntity> feedEntities = OmmAlertHandler.createFeedEntities(bulletins, lines, stops, TIMEZONE);
         assertEquals(bulletins.size(), feedEntities.size());
+        validateMockDataFirstEntity(feedEntities.get(0));
         return feedEntities;
     }
 
@@ -57,12 +58,41 @@ public class OmmAlertHandlerTest {
     public void testCreateFeedMessage() throws Exception {
         List<GtfsRealtime.FeedEntity> feedEntities = createFeedEntitiesFromDefaultMockData();
         final long timestamp = System.currentTimeMillis() / 1000;
-        //TODO move test to commons
+
         GtfsRealtime.FeedMessage msg = FeedMessageFactory.createFullFeedMessage(feedEntities, timestamp);
 
         assertNotNull(msg);
         assertEquals(timestamp, msg.getHeader().getTimestamp());
         assertEquals(feedEntities.size(), msg.getEntityCount());
+
+        validateMockDataFirstEntity(msg.getEntity(0));
+    }
+
+    private void validateMockDataFirstEntity(GtfsRealtime.FeedEntity entity) {
+        //last_modified	valid_from	valid_to	affects_all_routes	affects_all_stops	affected_route_ids	affected_stop_ids	title_fi	text_fi	title_sv	text_sv	title_en	text_en
+        //2018-11-06 12:06:17	2018-11-06 12:04:00	2018-11-14 23:30:00	FALSE	FALSE	9011301022600000		Finnoonlahden pysäkki Hylkeenpyytäjäntiellä siirty	Finnoonlahden pysäkki Hylkeenpyytäjäntiellä siirtyy perjantaina 9.11. // HSL.fi	Inga trafikstörningar	Hållplats Finnoviken på Säljägarvägen flyttas på fredag 9.11. // HSL.fi	No traffic disruption	"Finnoonlahti" bus stop on Hylkeenpyytäjäntie relocated on Friday 9 November // HSL.fi
+        assertTrue(entity.hasAlert());
+        assertFalse(entity.hasTripUpdate());
+        assertFalse(entity.hasVehicle());
+        assertFalse(entity.hasIsDeleted());
+
+        assertEquals("3593", entity.getId());
+        GtfsRealtime.Alert alert = entity.getAlert();
+        assertNotNull(alert);
+        assertEquals(GtfsRealtime.Alert.Effect.NO_SERVICE, alert.getEffect());
+        assertEquals(GtfsRealtime.Alert.Cause.OTHER_CAUSE, alert.getCause());
+        assertEquals(1, alert.getActivePeriodCount());
+        assertEquals(1, alert.getInformedEntityList().size());
+
+        GtfsRealtime.EntitySelector selector = alert.getInformedEntity(0);
+        assertFalse(selector.hasTrip());
+        assertFalse(selector.hasStopId());
+        assertFalse(selector.hasAgencyId());
+        assertTrue(selector.hasRouteId());
+        assertEquals(MockOmmConnector.lineGidToLineId(9011301022600000L), selector.getRouteId());
+
+        GtfsRealtime.TranslatedString header = alert.getHeaderText();
+        assertEquals(3, header.getTranslationCount());
     }
 
     @Test
