@@ -1,6 +1,7 @@
 package fi.hsl.transitdata.omm;
 
 import com.google.transit.realtime.GtfsRealtime;
+import fi.hsl.common.gtfsrt.FeedMessageFactory;
 import fi.hsl.transitdata.omm.db.MockOmmConnector;
 import fi.hsl.transitdata.omm.models.AlertState;
 import fi.hsl.transitdata.omm.models.Bulletin;
@@ -29,6 +30,7 @@ public class OmmAlertHandlerTest {
 
         List<GtfsRealtime.FeedEntity> feedEntities = OmmAlertHandler.createFeedEntities(bulletins, lines, stops, TIMEZONE);
         assertEquals(bulletins.size(), feedEntities.size());
+        validateMockDataFirstEntity(feedEntities.get(0));
         return feedEntities;
     }
 
@@ -56,11 +58,39 @@ public class OmmAlertHandlerTest {
     public void testCreateFeedMessage() throws Exception {
         List<GtfsRealtime.FeedEntity> feedEntities = createFeedEntitiesFromDefaultMockData();
         final long timestamp = System.currentTimeMillis() / 1000;
-        GtfsRealtime.FeedMessage msg = OmmAlertHandler.createFeedMessage(feedEntities, timestamp);
+
+        GtfsRealtime.FeedMessage msg = FeedMessageFactory.createFullFeedMessage(feedEntities, timestamp);
 
         assertNotNull(msg);
         assertEquals(timestamp, msg.getHeader().getTimestamp());
         assertEquals(feedEntities.size(), msg.getEntityCount());
+
+        validateMockDataFirstEntity(msg.getEntity(0));
+    }
+
+    private void validateMockDataFirstEntity(GtfsRealtime.FeedEntity entity) {
+        assertTrue(entity.hasAlert());
+        assertFalse(entity.hasTripUpdate());
+        assertFalse(entity.hasVehicle());
+        assertFalse(entity.hasIsDeleted());
+
+        assertEquals("3593", entity.getId());
+        GtfsRealtime.Alert alert = entity.getAlert();
+        assertNotNull(alert);
+        assertEquals(GtfsRealtime.Alert.Effect.NO_SERVICE, alert.getEffect());
+        assertEquals(GtfsRealtime.Alert.Cause.OTHER_CAUSE, alert.getCause());
+        assertEquals(1, alert.getActivePeriodCount());
+        assertEquals(1, alert.getInformedEntityList().size());
+
+        GtfsRealtime.EntitySelector selector = alert.getInformedEntity(0);
+        assertFalse(selector.hasTrip());
+        assertFalse(selector.hasStopId());
+        assertFalse(selector.hasAgencyId());
+        assertTrue(selector.hasRouteId());
+        assertEquals(MockOmmConnector.lineGidToLineId(9011301022600000L), selector.getRouteId());
+
+        GtfsRealtime.TranslatedString header = alert.getHeaderText();
+        assertEquals(3, header.getTranslationCount());
     }
 
     @Test

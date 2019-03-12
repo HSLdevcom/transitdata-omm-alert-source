@@ -1,6 +1,7 @@
 package fi.hsl.transitdata.omm;
 
 import com.google.transit.realtime.GtfsRealtime;
+import fi.hsl.common.gtfsrt.FeedMessageFactory;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
 import fi.hsl.common.transitdata.TransitdataProperties;
 import fi.hsl.transitdata.omm.db.BulletinDAO;
@@ -66,7 +67,7 @@ public class OmmAlertHandler {
                 final long timestampUtcSecs = timestampUtcMs / 1000;
 
                 List<FeedEntity> entities = createFeedEntities(bulletins, lines, stopPoints, timeZone);
-                GtfsRealtime.FeedMessage message = createFeedMessage(entities, timestampUtcSecs);
+                GtfsRealtime.FeedMessage message = FeedMessageFactory.createFullFeedMessage(entities, timestampUtcSecs);
 
                 sendPulsarMessage(message, timestampUtcMs);
             } else {
@@ -88,19 +89,6 @@ public class OmmAlertHandler {
         return lastModified.map(localDateTime -> toUtcEpochMs(localDateTime, timezone)).orElse(System.currentTimeMillis());
     }
 
-
-    static FeedMessage createFeedMessage(List<FeedEntity> entities, long timestampUtcSecs) {
-        GtfsRealtime.FeedHeader header = GtfsRealtime.FeedHeader.newBuilder()
-                .setGtfsRealtimeVersion("2.0")
-                .setIncrementality(FeedHeader.Incrementality.FULL_DATASET)
-                .setTimestamp(timestampUtcSecs)
-                .build();
-
-        return FeedMessage.newBuilder()
-                .addAllEntity(entities)
-                .setHeader(header)
-                .build();
-    }
 
     static List<FeedEntity> createFeedEntities(final List<Bulletin> bulletins, final Map<Long, Line> lines, final Map<Long, StopPoint> stopPoints, final String timeZone) {
         return bulletins.stream().map(bulletin -> {
