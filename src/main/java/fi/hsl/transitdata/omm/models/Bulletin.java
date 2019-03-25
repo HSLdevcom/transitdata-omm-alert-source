@@ -189,6 +189,52 @@ public class Bulletin {
         fi, en, sv
     }
 
+    /**
+     * @return possible GTFS-RT SeverityLevels:
+     * UNKNOWN_SEVERITY,
+     * INFO,
+     * WARNING,
+     * SEVERE,
+     */
+    public enum SeverityLevel {
+        UNKNOWN_SEVERITY,
+        INFO,
+        WARNING,
+        SEVERE,
+        NULL;
+
+        public static Optional<SeverityLevel> fromString(String str) {
+            if (str == null) {
+                return Optional.of(NULL);
+            }
+            switch (str) {
+                case "UNKNOWN_SEVERITY": return Optional.of(UNKNOWN_SEVERITY);
+                case "INFO": return Optional.of(INFO);
+                case "WARNING": return Optional.of(WARNING);
+                case "SEVERE": return Optional.of(SEVERE);
+                default: return Optional.empty();
+            }
+        }
+
+        /**
+         * @return possible GTFS-RT Effects:
+         * UNKNOWN_SEVERITY,
+         * INFO,
+         * WARNING,
+         * SEVERE
+         */
+        public GtfsRealtime.Alert.SeverityLevel toGtfsSeverityLevel() {
+            switch (this) {
+                case UNKNOWN_SEVERITY: return GtfsRealtime.Alert.SeverityLevel.UNKNOWN_SEVERITY;
+                case INFO: return GtfsRealtime.Alert.SeverityLevel.INFO;
+                case WARNING: return GtfsRealtime.Alert.SeverityLevel.WARNING;
+                case SEVERE: return GtfsRealtime.Alert.SeverityLevel.SEVERE;
+                case NULL: return GtfsRealtime.Alert.SeverityLevel.UNKNOWN_SEVERITY;
+                default: return GtfsRealtime.Alert.SeverityLevel.UNKNOWN_SEVERITY;
+            }
+        }
+    }
+
     public long id;
     public Category category;
     public Impact impact;
@@ -201,6 +247,7 @@ public class Bulletin {
     public List<Long> affectedStopGids;
     public GtfsRealtime.TranslatedString descriptions;
     public GtfsRealtime.TranslatedString headers;
+    public SeverityLevel severityLevel;
 
     public Bulletin() {}
 
@@ -219,6 +266,7 @@ public class Bulletin {
             affectedStopGids = new LinkedList<>(other.affectedStopGids);
         descriptions = other.descriptions;
         headers = other.headers;
+        severityLevel = other.severityLevel;
     }
 
 
@@ -250,6 +298,7 @@ public class Bulletin {
         same &= equalsWithNullCheck(this.affectedStopGids, other.affectedStopGids);
         same &= equalsWithNullCheck(this.descriptions, other.descriptions);
         same &= equalsWithNullCheck(this.headers, other.headers);
+        same &= this.severityLevel == other.severityLevel;
 
         return same;
     }

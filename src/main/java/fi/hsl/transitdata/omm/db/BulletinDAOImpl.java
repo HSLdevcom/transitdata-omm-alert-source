@@ -58,6 +58,9 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
             bulletin.affectedStopGids = parseListFromCommaSeparatedString(resultSet.getString("affected_stop_ids"));
             bulletin.descriptions = parseDescriptions(resultSet);
             bulletin.headers = parseTitles(resultSet);
+            // TODO: Actual column name for SeverityLevel in OMM is not known yet
+            bulletin.severityLevel = Bulletin.SeverityLevel.fromString(resultSet.getString("severity_level"))
+                    .orElse(Bulletin.SeverityLevel.UNKNOWN_SEVERITY);
 
             bulletins.add(bulletin);
         }
@@ -99,6 +102,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
         }
     }
 
+    // TODO: Actual column name for SeverityLevel in OMM is not known yet
     private String createQuery() {
         return "SELECT B.bulletins_id" +
                 "    ,PBMD.impact" +
@@ -110,6 +114,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    ,B.affects_all_stops" +
                 "    ,B.affected_route_ids" +
                 "    ,B.affected_stop_ids" +
+                "    ,B.severity_level" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'fi' THEN BLM.title END) AS title_fi" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'fi' THEN BLM.description END) AS text_fi" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'sv' THEN BLM.title END) AS title_sv" +
@@ -130,6 +135,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    ,B.affects_all_routes" +
                 "    ,B.affects_all_stops" +
                 "    ,B.affected_route_ids" +
-                "    ,B.affected_stop_ids";
+                "    ,B.affected_stop_ids" +
+                "    ,B.severity_level";
     }
 }
