@@ -141,7 +141,10 @@ public class OmmAlertHandler {
             builder.setEffect(bulletin.impact.toGtfsEffect());
             builder.setDescriptionText(bulletin.descriptions);
             builder.setHeaderText(bulletin.headers);
-            builder.setSeverityLevel(bulletin.severityLevel.toGtfsSeverityLevel());
+            final Optional<Alert.SeverityLevel> maybeSeverityLevel = bulletin.priority.toGtfsSeverityLevel();
+            if (maybeSeverityLevel.isPresent()) {
+                builder.setSeverityLevel(maybeSeverityLevel.get());
+            }
 
             List<EntitySelector> entitySelectors = entitySelectorsForBulletin(bulletin, lines, stopPoints);
             if (entitySelectors.isEmpty()) {

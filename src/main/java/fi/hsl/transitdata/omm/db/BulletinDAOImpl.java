@@ -7,11 +7,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
@@ -58,9 +57,16 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
             bulletin.affectedStopGids = parseListFromCommaSeparatedString(resultSet.getString("affected_stop_ids"));
             bulletin.descriptions = parseDescriptions(resultSet);
             bulletin.headers = parseTitles(resultSet);
-            // TODO: Actual column name for SeverityLevel in OMM is not known yet
-            bulletin.severityLevel = Bulletin.SeverityLevel.fromString(resultSet.getString("severity_level"))
-                    .orElse(Bulletin.SeverityLevel.UNKNOWN_SEVERITY);
+
+            final Integer priorityInt = resultSet.getInt("priority");
+            Optional<Bulletin.Priority> maybePriority = Bulletin.Priority.fromInt(priorityInt);
+            if (maybePriority.isPresent()) {
+                bulletin.priority = maybePriority.get();
+            } else {
+                // Do not handle bulletin if priority cannot be parsed
+                log.warn("Failed to parse priority {}", priorityInt);
+                continue;
+            }
 
             bulletins.add(bulletin);
         }
@@ -102,7 +108,6 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
         }
     }
 
-    // TODO: Actual column name for SeverityLevel in OMM is not known yet
     private String createQuery() {
         return "SELECT B.bulletins_id" +
                 "    ,PBMD.impact" +
@@ -114,7 +119,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    ,B.affects_all_stops" +
                 "    ,B.affected_route_ids" +
                 "    ,B.affected_stop_ids" +
-                "    ,B.severity_level" +
+                "    ,PBMD.priority" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'fi' THEN BLM.title END) AS title_fi" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'fi' THEN BLM.description END) AS text_fi" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'sv' THEN BLM.title END) AS title_sv" +
@@ -136,6 +141,6 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    ,B.affects_all_stops" +
                 "    ,B.affected_route_ids" +
                 "    ,B.affected_stop_ids" +
-                "    ,B.severity_level";
+                "    ,PBMD.priority";
     }
 }

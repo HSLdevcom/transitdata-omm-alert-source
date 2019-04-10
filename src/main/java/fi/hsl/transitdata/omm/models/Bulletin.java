@@ -189,29 +189,16 @@ public class Bulletin {
         fi, en, sv
     }
 
-    /**
-     * @return possible GTFS-RT SeverityLevels:
-     * UNKNOWN_SEVERITY,
-     * INFO,
-     * WARNING,
-     * SEVERE,
-     */
-    public enum SeverityLevel {
-        UNKNOWN_SEVERITY,
+    public enum Priority {
         INFO,
         WARNING,
-        SEVERE,
-        NULL;
+        SEVERE;
 
-        public static Optional<SeverityLevel> fromString(String str) {
-            if (str == null) {
-                return Optional.of(NULL);
-            }
-            switch (str) {
-                case "UNKNOWN_SEVERITY": return Optional.of(UNKNOWN_SEVERITY);
-                case "INFO": return Optional.of(INFO);
-                case "WARNING": return Optional.of(WARNING);
-                case "SEVERE": return Optional.of(SEVERE);
+        public static Optional<Priority> fromInt(final Integer priority) {
+            switch (priority) {
+                case 1: return Optional.of(INFO);
+                case 2: return Optional.of(WARNING);
+                case 3: return Optional.of(SEVERE);
                 default: return Optional.empty();
             }
         }
@@ -223,14 +210,12 @@ public class Bulletin {
          * WARNING,
          * SEVERE
          */
-        public GtfsRealtime.Alert.SeverityLevel toGtfsSeverityLevel() {
+        public Optional<GtfsRealtime.Alert.SeverityLevel> toGtfsSeverityLevel() {
             switch (this) {
-                case UNKNOWN_SEVERITY: return GtfsRealtime.Alert.SeverityLevel.UNKNOWN_SEVERITY;
-                case INFO: return GtfsRealtime.Alert.SeverityLevel.INFO;
-                case WARNING: return GtfsRealtime.Alert.SeverityLevel.WARNING;
-                case SEVERE: return GtfsRealtime.Alert.SeverityLevel.SEVERE;
-                case NULL: return GtfsRealtime.Alert.SeverityLevel.UNKNOWN_SEVERITY;
-                default: return GtfsRealtime.Alert.SeverityLevel.UNKNOWN_SEVERITY;
+                case INFO: return Optional.of(GtfsRealtime.Alert.SeverityLevel.INFO);
+                case WARNING: return Optional.of(GtfsRealtime.Alert.SeverityLevel.WARNING);
+                case SEVERE: return Optional.of(GtfsRealtime.Alert.SeverityLevel.SEVERE);
+                default: return Optional.empty();
             }
         }
     }
@@ -247,7 +232,7 @@ public class Bulletin {
     public List<Long> affectedStopGids;
     public GtfsRealtime.TranslatedString descriptions;
     public GtfsRealtime.TranslatedString headers;
-    public SeverityLevel severityLevel;
+    public Priority priority;
 
     public Bulletin() {}
 
@@ -266,7 +251,7 @@ public class Bulletin {
             affectedStopGids = new LinkedList<>(other.affectedStopGids);
         descriptions = other.descriptions;
         headers = other.headers;
-        severityLevel = other.severityLevel;
+        priority = other.priority;
     }
 
 
@@ -298,7 +283,7 @@ public class Bulletin {
         same &= equalsWithNullCheck(this.affectedStopGids, other.affectedStopGids);
         same &= equalsWithNullCheck(this.descriptions, other.descriptions);
         same &= equalsWithNullCheck(this.headers, other.headers);
-        same &= this.severityLevel == other.severityLevel;
+        same &= this.priority == other.priority;
 
         return same;
     }
