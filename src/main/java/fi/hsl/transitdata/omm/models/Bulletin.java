@@ -132,7 +132,8 @@ public class Bulletin {
         REDUCED_TRANSPORT,
         RETURNING_TO_NORMAL,
         VENDING_MACHINE_OUT_OF_ORDER,
-        NULL;
+        NULL,
+        OTHER;
 
         public static Impact fromString(String str) {
             if (str == null) {
@@ -149,6 +150,7 @@ public class Bulletin {
                 case "REDUCED_TRANSPORT": return REDUCED_TRANSPORT;
                 case "RETURNING_TO_NORMAL": return RETURNING_TO_NORMAL;
                 case "VENDING_MACHINE_OUT_OF_ORDER": return VENDING_MACHINE_OUT_OF_ORDER;
+                case "OTHER": return OTHER;
                 default: throw new IllegalArgumentException("Could not parse Impact from String: " + str);
             }
         }
@@ -178,6 +180,7 @@ public class Bulletin {
                 case RETURNING_TO_NORMAL: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
                 case VENDING_MACHINE_OUT_OF_ORDER: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
                 case NULL: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
+                case OTHER: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
                 default: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
             }
         }
