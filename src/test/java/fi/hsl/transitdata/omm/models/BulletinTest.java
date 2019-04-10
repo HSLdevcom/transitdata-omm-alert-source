@@ -79,6 +79,15 @@ public class BulletinTest {
     }
 
     @Test
+    public void testPriorityToGtfsEnum() {
+        List<Bulletin.Priority> all = Arrays.asList(Bulletin.Priority.values());
+        assertEquals(3, all.size());
+        for (Bulletin.Priority i: all) {
+            assertNotNull(i.toGtfsSeverityLevel());
+        }
+    }
+
+    @Test
     public void testLanguageCodes() {
         Set<String> languageCodes = Arrays.stream(Bulletin.Language.values()).map(Bulletin.Language::toString).collect(Collectors.toSet());
         assertEquals(3, languageCodes.size());

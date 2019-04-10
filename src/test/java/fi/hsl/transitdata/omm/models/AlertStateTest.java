@@ -44,7 +44,7 @@ public class AlertStateTest {
     }
 
     private List<Bulletin> readDefaultTestBulletins() throws Exception {
-        MockOmmConnector connector = MockOmmConnector.newInstance("2018_11_alert_dump.tsv");
+        MockOmmConnector connector = MockOmmConnector.newInstance("2019_04_alert_dump.tsv");
         return connector.getBulletinDAO().getActiveBulletins();
     }
 
@@ -106,6 +106,12 @@ public class AlertStateTest {
 
         modified = createModifiedAlertState(secondBulletins, bulletin -> {
             bulletin.category = Bulletin.Category.ROAD_CLOSED;
+            return bulletin;
+        });
+        assertNotEquals(first, modified);
+
+        modified = createModifiedAlertState(secondBulletins, bulletin -> {
+            bulletin.priority = Bulletin.Priority.SEVERE;
             return bulletin;
         });
         assertNotEquals(first, modified);
@@ -197,6 +203,6 @@ public class AlertStateTest {
         Optional<LocalDateTime> maybeDt = state.lastModified();
         assertTrue(maybeDt.isPresent());
         String dt = DAOImplBase.OMM_DT_FORMATTER.format(maybeDt.get());
-        assertEquals("2018-11-19 12:02:42", dt);
+        assertEquals("2019-04-08 15:21:24", dt);
     }
 }

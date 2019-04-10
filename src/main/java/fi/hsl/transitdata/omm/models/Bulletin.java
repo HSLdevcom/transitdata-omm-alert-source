@@ -189,6 +189,37 @@ public class Bulletin {
         fi, en, sv
     }
 
+    public enum Priority {
+        INFO,
+        WARNING,
+        SEVERE;
+
+        public static Optional<Priority> fromInt(final Integer priority) {
+            switch (priority) {
+                case 1: return Optional.of(INFO);
+                case 2: return Optional.of(WARNING);
+                case 3: return Optional.of(SEVERE);
+                default: return Optional.empty();
+            }
+        }
+
+        /**
+         * @return possible GTFS-RT Effects:
+         * UNKNOWN_SEVERITY,
+         * INFO,
+         * WARNING,
+         * SEVERE
+         */
+        public Optional<GtfsRealtime.Alert.SeverityLevel> toGtfsSeverityLevel() {
+            switch (this) {
+                case INFO: return Optional.of(GtfsRealtime.Alert.SeverityLevel.INFO);
+                case WARNING: return Optional.of(GtfsRealtime.Alert.SeverityLevel.WARNING);
+                case SEVERE: return Optional.of(GtfsRealtime.Alert.SeverityLevel.SEVERE);
+                default: return Optional.empty();
+            }
+        }
+    }
+
     public long id;
     public Category category;
     public Impact impact;
@@ -201,6 +232,7 @@ public class Bulletin {
     public List<Long> affectedStopGids;
     public GtfsRealtime.TranslatedString descriptions;
     public GtfsRealtime.TranslatedString headers;
+    public Priority priority;
 
     public Bulletin() {}
 
@@ -219,6 +251,7 @@ public class Bulletin {
             affectedStopGids = new LinkedList<>(other.affectedStopGids);
         descriptions = other.descriptions;
         headers = other.headers;
+        priority = other.priority;
     }
 
 
@@ -250,6 +283,7 @@ public class Bulletin {
         same &= equalsWithNullCheck(this.affectedStopGids, other.affectedStopGids);
         same &= equalsWithNullCheck(this.descriptions, other.descriptions);
         same &= equalsWithNullCheck(this.headers, other.headers);
+        same &= this.priority == other.priority;
 
         return same;
     }
