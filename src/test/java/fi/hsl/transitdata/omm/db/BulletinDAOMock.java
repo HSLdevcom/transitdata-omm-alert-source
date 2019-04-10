@@ -5,6 +5,7 @@ import fi.hsl.transitdata.omm.models.Bulletin;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class BulletinDAOMock implements BulletinDAO {
@@ -34,6 +35,10 @@ public class BulletinDAOMock implements BulletinDAO {
         b.affectsAllStops = Boolean.parseBoolean(split[index++]);
         b.affectedLineGids = BulletinDAOImpl.parseListFromCommaSeparatedString(split[index++]);
         b.affectedStopGids = BulletinDAOImpl.parseListFromCommaSeparatedString(split[index++]);
+        Optional<Bulletin.Priority> maybePriority = Bulletin.Priority.fromInt(Integer.parseInt(split[index++]));
+        if (maybePriority.isPresent()) {
+            b.priority = maybePriority.get();
+        }
 
         String titleFi = split[index++];
         String textFi = split[index++];
