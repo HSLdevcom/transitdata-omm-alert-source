@@ -133,7 +133,9 @@ public class Bulletin {
         RETURNING_TO_NORMAL,
         VENDING_MACHINE_OUT_OF_ORDER,
         NULL,
-        OTHER;
+        OTHER,
+        NO_TRAFFIC_IMPACT,
+        UNKNOWN;
 
         public static Impact fromString(String str) {
             if (str == null) {
@@ -151,6 +153,8 @@ public class Bulletin {
                 case "RETURNING_TO_NORMAL": return RETURNING_TO_NORMAL;
                 case "VENDING_MACHINE_OUT_OF_ORDER": return VENDING_MACHINE_OUT_OF_ORDER;
                 case "OTHER": return OTHER;
+                case "NO_TRAFFIC_IMPACT": return NO_TRAFFIC_IMPACT;
+                case "UNKNOWN": return UNKNOWN;
                 default: throw new IllegalArgumentException("Could not parse Impact from String: " + str);
             }
         }
@@ -181,6 +185,8 @@ public class Bulletin {
                 case VENDING_MACHINE_OUT_OF_ORDER: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
                 case NULL: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
                 case OTHER: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
+                case NO_TRAFFIC_IMPACT: return GtfsRealtime.Alert.Effect.NO_EFFECT;
+                case UNKNOWN: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
                 default: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
             }
         }
