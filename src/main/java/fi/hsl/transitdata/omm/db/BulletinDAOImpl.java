@@ -42,33 +42,36 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
     private List<Bulletin> parseBulletins(ResultSet resultSet) throws SQLException {
         List<Bulletin> bulletins = new LinkedList<>();
         while (resultSet.next()) {
-            Bulletin bulletin = new Bulletin();
+            try {
+                Bulletin bulletin = new Bulletin();
 
-            bulletin.id = resultSet.getLong("bulletins_id");
-            log.debug("Handling bulletin id {}", bulletin.id);
-            bulletin.category = Bulletin.Category.fromString(resultSet.getString("category"));
-            bulletin.impact = Bulletin.Impact.fromString(resultSet.getString("impact"));
-            bulletin.lastModified = parseOmmLocalDateTime(resultSet.getString("last_modified"));
-            bulletin.validFrom = parseNullableOmmLocalDateTime(resultSet.getString("valid_from"));
-            bulletin.validTo = parseNullableOmmLocalDateTime(resultSet.getString("valid_to"));
-            bulletin.affectsAllRoutes = resultSet.getInt("affects_all_routes") > 0;
-            bulletin.affectsAllStops = resultSet.getInt("affects_all_stops") > 0;
-            bulletin.affectedLineGids = parseListFromCommaSeparatedString(resultSet.getString("affected_route_ids"));
-            bulletin.affectedStopGids = parseListFromCommaSeparatedString(resultSet.getString("affected_stop_ids"));
-            bulletin.descriptions = parseDescriptions(resultSet);
-            bulletin.headers = parseTitles(resultSet);
+                bulletin.id = resultSet.getLong("bulletins_id");
+                log.debug("Handling bulletin id {}", bulletin.id);
+                bulletin.category = Bulletin.Category.fromString(resultSet.getString("category"));
+                bulletin.impact = Bulletin.Impact.fromString(resultSet.getString("impact"));
+                bulletin.lastModified = parseOmmLocalDateTime(resultSet.getString("last_modified"));
+                bulletin.validFrom = parseNullableOmmLocalDateTime(resultSet.getString("valid_from"));
+                bulletin.validTo = parseNullableOmmLocalDateTime(resultSet.getString("valid_to"));
+                bulletin.affectsAllRoutes = resultSet.getInt("affects_all_routes") > 0;
+                bulletin.affectsAllStops = resultSet.getInt("affects_all_stops") > 0;
+                bulletin.affectedLineGids = parseListFromCommaSeparatedString(resultSet.getString("affected_route_ids"));
+                bulletin.affectedStopGids = parseListFromCommaSeparatedString(resultSet.getString("affected_stop_ids"));
+                bulletin.descriptions = parseDescriptions(resultSet);
+                bulletin.headers = parseTitles(resultSet);
 
-            final Integer priorityInt = resultSet.getInt("priority");
-            Optional<Bulletin.Priority> maybePriority = Bulletin.Priority.fromInt(priorityInt);
-            if (maybePriority.isPresent()) {
-                bulletin.priority = maybePriority.get();
-            } else {
-                // Do not handle bulletin if priority cannot be parsed
-                log.warn("Failed to parse priority {}", priorityInt);
-                continue;
+                final Integer priorityInt = resultSet.getInt("priority");
+                Optional<Bulletin.Priority> maybePriority = Bulletin.Priority.fromInt(priorityInt);
+                if (maybePriority.isPresent()) {
+                    bulletin.priority = maybePriority.get();
+                    bulletins.add(bulletin);
+                } else {
+                    // Do not handle bulletin if priority cannot be parsed
+                    log.warn("Failed to parse priority {}", priorityInt);
+                }
             }
-
-            bulletins.add(bulletin);
+            catch (IllegalArgumentException iae) {
+                log.error("Failed to create bulletin because of unexpected data: ", iae);
+            }
         }
         return bulletins;
     }
