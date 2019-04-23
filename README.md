@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source.svg?branch=master)](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source)
+[![Build Status](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source.svg?branch=master)](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source) master  
+[![Build Status](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source.svg?branch=develop)](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source) develop
 
 # Transitdata-omm-alert-source
 

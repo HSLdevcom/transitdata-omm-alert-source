@@ -132,7 +132,10 @@ public class Bulletin {
         REDUCED_TRANSPORT,
         RETURNING_TO_NORMAL,
         VENDING_MACHINE_OUT_OF_ORDER,
-        NULL;
+        NULL,
+        OTHER,
+        NO_TRAFFIC_IMPACT,
+        UNKNOWN;
 
         public static Impact fromString(String str) {
             if (str == null) {
@@ -149,6 +152,9 @@ public class Bulletin {
                 case "REDUCED_TRANSPORT": return REDUCED_TRANSPORT;
                 case "RETURNING_TO_NORMAL": return RETURNING_TO_NORMAL;
                 case "VENDING_MACHINE_OUT_OF_ORDER": return VENDING_MACHINE_OUT_OF_ORDER;
+                case "OTHER": return OTHER;
+                case "NO_TRAFFIC_IMPACT": return NO_TRAFFIC_IMPACT;
+                case "UNKNOWN": return UNKNOWN;
                 default: throw new IllegalArgumentException("Could not parse Impact from String: " + str);
             }
         }
@@ -178,6 +184,9 @@ public class Bulletin {
                 case RETURNING_TO_NORMAL: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
                 case VENDING_MACHINE_OUT_OF_ORDER: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
                 case NULL: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
+                case OTHER: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
+                case NO_TRAFFIC_IMPACT: return GtfsRealtime.Alert.Effect.NO_EFFECT;
+                case UNKNOWN: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
                 default: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
             }
         }
@@ -187,6 +196,37 @@ public class Bulletin {
     public enum Language {
         //Let's define these already in BCP-47 format, so .toString() works
         fi, en, sv
+    }
+
+    public enum Priority {
+        INFO,
+        WARNING,
+        SEVERE;
+
+        public static Optional<Priority> fromInt(final Integer priority) {
+            switch (priority) {
+                case 1: return Optional.of(INFO);
+                case 2: return Optional.of(WARNING);
+                case 3: return Optional.of(SEVERE);
+                default: return Optional.empty();
+            }
+        }
+
+        /**
+         * @return possible GTFS-RT Effects:
+         * UNKNOWN_SEVERITY,
+         * INFO,
+         * WARNING,
+         * SEVERE
+         */
+        public Optional<GtfsRealtime.Alert.SeverityLevel> toGtfsSeverityLevel() {
+            switch (this) {
+                case INFO: return Optional.of(GtfsRealtime.Alert.SeverityLevel.INFO);
+                case WARNING: return Optional.of(GtfsRealtime.Alert.SeverityLevel.WARNING);
+                case SEVERE: return Optional.of(GtfsRealtime.Alert.SeverityLevel.SEVERE);
+                default: return Optional.empty();
+            }
+        }
     }
 
     public long id;
@@ -201,6 +241,7 @@ public class Bulletin {
     public List<Long> affectedStopGids;
     public GtfsRealtime.TranslatedString descriptions;
     public GtfsRealtime.TranslatedString headers;
+    public Priority priority;
 
     public Bulletin() {}
 
@@ -219,6 +260,7 @@ public class Bulletin {
             affectedStopGids = new LinkedList<>(other.affectedStopGids);
         descriptions = other.descriptions;
         headers = other.headers;
+        priority = other.priority;
     }
 
 
@@ -250,6 +292,7 @@ public class Bulletin {
         same &= equalsWithNullCheck(this.affectedStopGids, other.affectedStopGids);
         same &= equalsWithNullCheck(this.descriptions, other.descriptions);
         same &= equalsWithNullCheck(this.headers, other.headers);
+        same &= this.priority == other.priority;
 
         return same;
     }

@@ -7,11 +7,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
@@ -43,23 +42,36 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
     private List<Bulletin> parseBulletins(ResultSet resultSet) throws SQLException {
         List<Bulletin> bulletins = new LinkedList<>();
         while (resultSet.next()) {
-            Bulletin bulletin = new Bulletin();
+            try {
+                Bulletin bulletin = new Bulletin();
 
-            bulletin.id = resultSet.getLong("bulletins_id");
-            log.debug("Handling bulletin id {}", bulletin.id);
-            bulletin.category = Bulletin.Category.fromString(resultSet.getString("category"));
-            bulletin.impact = Bulletin.Impact.fromString(resultSet.getString("impact"));
-            bulletin.lastModified = parseOmmLocalDateTime(resultSet.getString("last_modified"));
-            bulletin.validFrom = parseNullableOmmLocalDateTime(resultSet.getString("valid_from"));
-            bulletin.validTo = parseNullableOmmLocalDateTime(resultSet.getString("valid_to"));
-            bulletin.affectsAllRoutes = resultSet.getInt("affects_all_routes") > 0;
-            bulletin.affectsAllStops = resultSet.getInt("affects_all_stops") > 0;
-            bulletin.affectedLineGids = parseListFromCommaSeparatedString(resultSet.getString("affected_route_ids"));
-            bulletin.affectedStopGids = parseListFromCommaSeparatedString(resultSet.getString("affected_stop_ids"));
-            bulletin.descriptions = parseDescriptions(resultSet);
-            bulletin.headers = parseTitles(resultSet);
+                bulletin.id = resultSet.getLong("bulletins_id");
+                log.debug("Handling bulletin id {}", bulletin.id);
+                bulletin.category = Bulletin.Category.fromString(resultSet.getString("category"));
+                bulletin.impact = Bulletin.Impact.fromString(resultSet.getString("impact"));
+                bulletin.lastModified = parseOmmLocalDateTime(resultSet.getString("last_modified"));
+                bulletin.validFrom = parseNullableOmmLocalDateTime(resultSet.getString("valid_from"));
+                bulletin.validTo = parseNullableOmmLocalDateTime(resultSet.getString("valid_to"));
+                bulletin.affectsAllRoutes = resultSet.getInt("affects_all_routes") > 0;
+                bulletin.affectsAllStops = resultSet.getInt("affects_all_stops") > 0;
+                bulletin.affectedLineGids = parseListFromCommaSeparatedString(resultSet.getString("affected_route_ids"));
+                bulletin.affectedStopGids = parseListFromCommaSeparatedString(resultSet.getString("affected_stop_ids"));
+                bulletin.descriptions = parseDescriptions(resultSet);
+                bulletin.headers = parseTitles(resultSet);
 
-            bulletins.add(bulletin);
+                final Integer priorityInt = resultSet.getInt("priority");
+                Optional<Bulletin.Priority> maybePriority = Bulletin.Priority.fromInt(priorityInt);
+                if (maybePriority.isPresent()) {
+                    bulletin.priority = maybePriority.get();
+                    bulletins.add(bulletin);
+                } else {
+                    // Do not handle bulletin if priority cannot be parsed
+                    log.warn("Failed to parse priority {}", priorityInt);
+                }
+            }
+            catch (IllegalArgumentException iae) {
+                log.error("Failed to create bulletin because of unexpected data: ", iae);
+            }
         }
         return bulletins;
     }
@@ -110,6 +122,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    ,B.affects_all_stops" +
                 "    ,B.affected_route_ids" +
                 "    ,B.affected_stop_ids" +
+                "    ,PBMD.priority" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'fi' THEN BLM.title END) AS title_fi" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'fi' THEN BLM.description END) AS text_fi" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'sv' THEN BLM.title END) AS title_sv" +
@@ -130,6 +143,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    ,B.affects_all_routes" +
                 "    ,B.affects_all_stops" +
                 "    ,B.affected_route_ids" +
-                "    ,B.affected_stop_ids";
+                "    ,B.affected_stop_ids" +
+                "    ,PBMD.priority";
     }
 }
