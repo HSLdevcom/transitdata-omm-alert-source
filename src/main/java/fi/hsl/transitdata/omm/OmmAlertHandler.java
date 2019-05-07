@@ -4,6 +4,7 @@ import com.google.transit.realtime.GtfsRealtime;
 import fi.hsl.common.gtfsrt.FeedMessageFactory;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
 import fi.hsl.common.transitdata.TransitdataProperties;
+import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.omm.db.BulletinDAO;
 import fi.hsl.transitdata.omm.db.LineDAO;
 import fi.hsl.transitdata.omm.db.OmmDbConnector;
@@ -64,12 +65,9 @@ public class OmmAlertHandler {
                 Map<Long, StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
 
                 final long timestampUtcMs = lastModifiedInUtcMs(latestState, timeZone);
-                final long timestampUtcSecs = timestampUtcMs / 1000;
 
-                List<FeedEntity> entities = createFeedEntities(bulletins, lines, stopPoints, timeZone);
-                GtfsRealtime.FeedMessage message = FeedMessageFactory.createFullFeedMessage(entities, timestampUtcSecs);
-
-                sendPulsarMessage(message, timestampUtcMs);
+                final InternalMessages.ServiceAlert alert = createServiceAlert(bulletins, lines, stopPoints, timeZone);
+                sendPulsarMessage(alert, timestampUtcMs);
             } else {
                 log.info("No changes to current Service Alerts.");
             }
@@ -102,6 +100,18 @@ public class OmmAlertHandler {
         }).filter(Optional::isPresent)
           .map(Optional::get)
           .collect(Collectors.toList());
+    }
+
+    static InternalMessages.ServiceAlert createServiceAlert(final List<Bulletin> bulletins, final Map<Long, Line> lines, final Map<Long, StopPoint> stopPoints, final String timeZone) {
+        final InternalMessages.ServiceAlert.Builder builder = InternalMessages.ServiceAlert.newBuilder();
+        builder.setSchemaVersion(builder.getSchemaVersion());
+        final List<InternalMessages.Bulletin> bulletins1 = bulletins.stream()
+                .map(bulletin -> createBulletin(bulletin, lines, stopPoints, timeZone))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+        builder.addAllBulletins(bulletins1);
+        return builder.build();
     }
 
     public long toUtcEpochMs(LocalDateTime localTimestamp) {
@@ -161,6 +171,72 @@ public class OmmAlertHandler {
         return maybeAlert;
     }
 
+    static Optional<InternalMessages.Bulletin> createBulletin(final Bulletin bulletin, final Map<Long, Line> lines, final Map<Long, StopPoint> stopPoints, final String timezone) {
+        Optional<InternalMessages.Bulletin> maybeBulletin = Optional.empty();
+        try {
+            final InternalMessages.Bulletin.Builder builder = InternalMessages.Bulletin.newBuilder();
+
+            builder.setBulletinId(Long.toString(bulletin.id));
+            builder.setCategory(bulletin.category.toCategory());
+
+            long lastModifiedInUtcMs = toUtcEpochMs(bulletin.lastModified, timezone);
+            builder.setLastModifiedUtcMs(lastModifiedInUtcMs);
+
+            Optional<Long> startInUtcMs = bulletin.validFrom.map(from -> toUtcEpochMs(from, timezone));
+            if (startInUtcMs.isPresent()) {
+                builder.setValidFromUtcMs(startInUtcMs.get());
+            } else {
+                log.error("No start time specified for bulletin {}", bulletin.id);
+            }
+
+            Optional<Long> stopInUtcMs = bulletin.validTo.map(to -> toUtcEpochMs(to, timezone));
+            if (stopInUtcMs.isPresent()) {
+                builder.setValidToUtcMs(stopInUtcMs.get());
+            } else {
+                log.error("No end time specified for bulletin {}", bulletin.id);
+            }
+
+            builder.setAffectsAllRoutes(bulletin.affectsAllRoutes);
+            builder.setAffectsAllStops(bulletin.affectsAllStops);
+            builder.setImpact(bulletin.impact.toImpact());
+            builder.setPriority(bulletin.priority.toPriority());
+
+            builder.addAllTitles(bulletin.headers.getTranslationList().stream()
+                    .map(translation -> InternalMessages.Bulletin.Translation.newBuilder()
+                            .setText(translation.getText())
+                            .setLanguage(translation.getLanguage())
+                            .build())
+                    .collect(Collectors.toList())
+            );
+
+            builder.addAllDescriptions(bulletin.descriptions.getTranslationList().stream()
+                    .map(translation -> InternalMessages.Bulletin.Translation.newBuilder()
+                            .setText(translation.getText())
+                            .setLanguage(translation.getLanguage())
+                            .build())
+                    .collect(Collectors.toList())
+            );
+
+
+            List<InternalMessages.Bulletin.AffectedEntity> affectedRoutes = getAffectedRoutes(bulletin, lines);
+            List<InternalMessages.Bulletin.AffectedEntity> affectedStops = getAffectedStops(bulletin, stopPoints);
+            if (affectedRoutes.isEmpty() && affectedStops.isEmpty()) {
+                log.error("Failed to find any Affected Entities for bulletin Id {}. Discarding alert.", bulletin.id);
+                maybeBulletin = Optional.empty();
+            }
+            else {
+                builder.addAllAffectedRoutes(affectedRoutes);
+                builder.addAllAffectedStops(affectedStops);
+                maybeBulletin = Optional.of(builder.build());
+            }
+        }
+        catch (Exception e) {
+            log.error("Exception while creating an alert!", e);
+            maybeBulletin = Optional.empty();
+        }
+        return maybeBulletin;
+    }
+
     static List<EntitySelector> entitySelectorsForBulletin(Bulletin bulletin, Map<Long, Line> lines, Map<Long, StopPoint> stopPoints) {
         List<EntitySelector> selectors = new LinkedList<>();
         if (bulletin.affectsAllRoutes || bulletin.affectsAllStops) {
@@ -203,6 +279,46 @@ public class OmmAlertHandler {
         return selectors;
     }
 
+    static List<InternalMessages.Bulletin.AffectedEntity> getAffectedRoutes(final Bulletin bulletin, final Map<Long, Line> routes) {
+        List<InternalMessages.Bulletin.AffectedEntity> affectedRoutes = new LinkedList<>();
+        if (bulletin.affectedLineGids.size() > 0) {
+            for (Long lineGid : bulletin.affectedLineGids) {
+                Optional<Line> route = Optional.ofNullable(routes.get(lineGid));
+                if (route.isPresent()) {
+                    String lineId = route.get().lineId;
+                    InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
+                            .setEntityId(lineId).build();
+                    affectedRoutes.add(entity);
+                }
+                else {
+                    log.error("Failed to find line ID for line GID: {}", lineGid);
+                }
+            }
+            log.debug("Found {} entity selectors for routes (should have been {})", affectedRoutes.size(), bulletin.affectedLineGids.size());
+        }
+        return affectedRoutes;
+    }
+
+    static List<InternalMessages.Bulletin.AffectedEntity> getAffectedStops(final Bulletin bulletin, final Map<Long, StopPoint> stops) {
+        List<InternalMessages.Bulletin.AffectedEntity> affectedStops = new LinkedList<>();
+        if (bulletin.affectedStopGids.size() > 0) {
+            for (Long stopGid : bulletin.affectedStopGids) {
+                Optional<StopPoint> stop = Optional.ofNullable(stops.get(stopGid));
+                if (stop.isPresent()) {
+                    String stopId = stop.get().stopId;
+                    InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
+                            .setEntityId(stopId).build();
+                    affectedStops.add(entity);
+                }
+                else {
+                    log.error("Failed to find stop ID for stop GID: {}", stopGid);
+                }
+            }
+            log.debug("Found {} entity selectors for routes (should have been {})", affectedStops.size(), bulletin.affectedStopGids.size());
+        }
+        return affectedStops;
+    }
+
     private void sendPulsarMessage(GtfsRealtime.FeedMessage message, long timestamp) throws PulsarClientException {
         try {
             producer.newMessage().value(message.toByteArray())
@@ -222,4 +338,22 @@ public class OmmAlertHandler {
         }
     }
 
+    private void sendPulsarMessage(final InternalMessages.ServiceAlert message, long timestamp) throws PulsarClientException {
+        try {
+            producer.newMessage().value(message.toByteArray())
+                    .eventTime(timestamp)
+                    .property(TransitdataProperties.KEY_PROTOBUF_SCHEMA, TransitdataProperties.ProtobufSchema.TransitdataServiceAlert.toString())
+                    .send();
+
+            log.info("Produced a new alert with timestamp {}", timestamp);
+
+        }
+        catch (PulsarClientException pe) {
+            log.error("Failed to send message to Pulsar", pe);
+            throw pe;
+        }
+        catch (Exception e) {
+            log.error("Failed to handle alert message", e);
+        }
+    }
 }

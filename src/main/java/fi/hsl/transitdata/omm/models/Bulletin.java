@@ -1,6 +1,7 @@
 package fi.hsl.transitdata.omm.models;
 
 import com.google.transit.realtime.GtfsRealtime;
+import fi.hsl.common.transitdata.proto.InternalMessages;
 
 import java.time.LocalDateTime;
 import java.util.LinkedList;
@@ -119,6 +120,10 @@ public class Bulletin {
                 default: return GtfsRealtime.Alert.Cause.UNKNOWN_CAUSE;
             }
         }
+
+        public InternalMessages.Category toCategory() {
+            return InternalMessages.Category.valueOf(this.toString());
+        }
     }
 
     public enum Impact {
@@ -190,6 +195,10 @@ public class Bulletin {
                 default: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
             }
         }
+
+        public InternalMessages.Bulletin.Impact toImpact() {
+            return InternalMessages.Bulletin.Impact.valueOf(this.toString());
+        }
     }
 
 
@@ -226,6 +235,10 @@ public class Bulletin {
                 case SEVERE: return Optional.of(GtfsRealtime.Alert.SeverityLevel.SEVERE);
                 default: return Optional.empty();
             }
+        }
+
+        public InternalMessages.Bulletin.Priority toPriority() {
+            return InternalMessages.Bulletin.Priority.valueOf(this.toString());
         }
     }
 
