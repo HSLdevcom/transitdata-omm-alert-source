@@ -7,7 +7,7 @@ This project is part of the [Transitdata Pulsar-pipeline](https://github.com/HSL
 
 ## Description
 
-Application for creating GTFS-RT Service Alerts from OMM database.
+Application for creating Service Alerts from OMM database.
 
 ## Building
 
