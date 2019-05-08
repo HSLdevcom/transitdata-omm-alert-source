@@ -1,9 +1,10 @@
 package fi.hsl.transitdata.omm.db;
 
-import com.google.transit.realtime.GtfsRealtime;
+import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.omm.models.Bulletin;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -41,50 +42,47 @@ public class BulletinDAOMock implements BulletinDAO {
         }
 
         String titleFi = split[index++];
+        String titleSv =  split[index++];
+        String titleEn = split[index++];
+
         String textFi = split[index++];
+        String textSv = split[index++];
+        String textEn = split[index++];
 
-        String titleSv =  null;
-        String textSv = null;
-        if (index < split.length) {
-            titleSv = split[index++];
-            textSv = split[index++];
-        }
-        String titleEn = null;
-        String textEn = null;
-        if (index < split.length) {
-            titleEn = split[index++];
-            textEn = split[index++];
-        }
+        String urlFi = split[index++];
+        String urlSv = split[index++];
+        String urlEn = split[index++];
 
+        b.titles = createTranslatedString(titleFi, titleSv, titleEn);
         b.descriptions = createTranslatedString(textFi, textSv, textEn);
-        b.headers = createTranslatedString(titleFi, titleSv, titleEn);
+        b.urls = createTranslatedString(urlFi, urlSv, urlEn);
         return b;
     }
 
 
 
-    private static GtfsRealtime.TranslatedString createTranslatedString(String fi, String sv, String en) {
-        GtfsRealtime.TranslatedString.Builder builder = GtfsRealtime.TranslatedString.newBuilder();
+    private static List<InternalMessages.Bulletin.Translation> createTranslatedString(String fi, String sv, String en) {
+        List<InternalMessages.Bulletin.Translation> translations = new ArrayList<>();
 
-        GtfsRealtime.TranslatedString.Translation translationFi = GtfsRealtime.TranslatedString.Translation.newBuilder()
+        InternalMessages.Bulletin.Translation translationFi = InternalMessages.Bulletin.Translation.newBuilder()
                 .setText(fi)
                 .setLanguage(Bulletin.Language.fi.toString()).build();
-        builder.addTranslation(translationFi);
+        translations.add(translationFi);
 
         if (sv != null) {
-            GtfsRealtime.TranslatedString.Translation translationSv = GtfsRealtime.TranslatedString.Translation.newBuilder()
+            InternalMessages.Bulletin.Translation translationSv = InternalMessages.Bulletin.Translation.newBuilder()
                     .setText(sv)
                     .setLanguage(Bulletin.Language.sv.toString()).build();
-            builder.addTranslation(translationSv);
+            translations.add(translationSv);
         }
         if (en != null) {
-            GtfsRealtime.TranslatedString.Translation translationEn = GtfsRealtime.TranslatedString.Translation.newBuilder()
+            InternalMessages.Bulletin.Translation translationEn = InternalMessages.Bulletin.Translation.newBuilder()
                     .setText(en)
                     .setLanguage(Bulletin.Language.en.toString()).build();
-            builder.addTranslation(translationEn);
+            translations.add(translationEn);
         }
 
-        return builder.build();
+        return translations;
     }
 
     public static Bulletin newMockBulletin(long id) {

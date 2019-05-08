@@ -92,7 +92,7 @@ public class OmmAlertHandlerTest {
         List<Bulletin> bulletins = connector.getBulletinDAO().getActiveBulletins();
         AlertState state = new AlertState(bulletins);
         long utcMs = OmmAlertHandler.lastModifiedInUtcMs(state, TIMEZONE);
-        assertEquals(1557228675107L, utcMs);
+        assertEquals(1557297894827L, utcMs);
     }
 
     @Test

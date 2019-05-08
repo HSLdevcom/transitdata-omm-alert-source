@@ -61,29 +61,29 @@ public class BulletinTest {
     }
 
     @Test
-    public void testCategoryToGtfsEnum() {
+    public void testCategoryToEnum() {
         List<Bulletin.Category> all = Arrays.asList(Bulletin.Category.values());
         assertEquals(32, all.size());
         for (Bulletin.Category c: all) {
-            assertNotNull(c.toGtfsCause());
+            assertNotNull(c.toCategory());
         }
     }
 
     @Test
-    public void testImpactToGtfsEnum() {
+    public void testImpactToEnum() {
         List<Bulletin.Impact> all = Arrays.asList(Bulletin.Impact.values());
         assertEquals(14, all.size());
         for (Bulletin.Impact i: all) {
-            assertNotNull(i.toGtfsEffect());
+            assertNotNull(i.toImpact());
         }
     }
 
     @Test
-    public void testPriorityToGtfsEnum() {
+    public void testPriorityToEnum() {
         List<Bulletin.Priority> all = Arrays.asList(Bulletin.Priority.values());
         assertEquals(3, all.size());
         for (Bulletin.Priority i: all) {
-            assertNotNull(i.toGtfsSeverityLevel());
+            assertNotNull(i.toPriority());
         }
     }
 
