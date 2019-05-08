@@ -44,7 +44,7 @@ public class AlertStateTest {
     }
 
     private List<Bulletin> readDefaultTestBulletins() throws Exception {
-        MockOmmConnector connector = MockOmmConnector.newInstance("2019_04_alert_dump.tsv");
+        MockOmmConnector connector = MockOmmConnector.newInstance("2019_05_alert_dump.tsv");
         return connector.getBulletinDAO().getActiveBulletins();
     }
 
@@ -203,6 +203,6 @@ public class AlertStateTest {
         Optional<LocalDateTime> maybeDt = state.lastModified();
         assertTrue(maybeDt.isPresent());
         String dt = DAOImplBase.OMM_DT_FORMATTER.format(maybeDt.get());
-        assertEquals("2019-04-08 15:21:24", dt);
+        assertEquals("2019-05-07 14:31:15", dt);
     }
 }
