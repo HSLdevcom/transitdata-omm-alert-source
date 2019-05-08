@@ -1,16 +1,13 @@
 package fi.hsl.transitdata.omm.db;
 
-import static com.google.transit.realtime.GtfsRealtime.*;
+import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.omm.models.Bulletin;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
@@ -56,8 +53,9 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 bulletin.affectsAllStops = resultSet.getInt("affects_all_stops") > 0;
                 bulletin.affectedLineGids = parseListFromCommaSeparatedString(resultSet.getString("affected_route_ids"));
                 bulletin.affectedStopGids = parseListFromCommaSeparatedString(resultSet.getString("affected_stop_ids"));
+                bulletin.titles = parseTitles(resultSet);
                 bulletin.descriptions = parseDescriptions(resultSet);
-                bulletin.headers = parseTitles(resultSet);
+                bulletin.urls = parseUrls(resultSet);
 
                 final Integer priorityInt = resultSet.getInt("priority");
                 Optional<Bulletin.Priority> maybePriority = Bulletin.Priority.fromInt(priorityInt);
@@ -76,29 +74,33 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
         return bulletins;
     }
 
-    static TranslatedString parseTitles(ResultSet resultSet) throws SQLException {
+    static List<InternalMessages.Bulletin.Translation> parseTitles(ResultSet resultSet) throws SQLException {
         return parseText(resultSet,"title_");
     }
 
-    static TranslatedString parseDescriptions(ResultSet resultSet) throws SQLException {
+    static List<InternalMessages.Bulletin.Translation> parseDescriptions(ResultSet resultSet) throws SQLException {
         return parseText(resultSet,"text_");
     }
 
-    private static TranslatedString parseText(final ResultSet resultSet, final String columnPrefix) throws SQLException {
-        TranslatedString.Builder builder = TranslatedString.newBuilder();
+    static List<InternalMessages.Bulletin.Translation> parseUrls(ResultSet resultSet) throws SQLException {
+        return parseText(resultSet,"url_");
+    }
+
+    private static List<InternalMessages.Bulletin.Translation> parseText(final ResultSet resultSet, final String columnPrefix) throws SQLException {
+        List<InternalMessages.Bulletin.Translation> translations = new ArrayList<>();
 
         String[] suffixes = {Bulletin.Language.en.toString(), Bulletin.Language.fi.toString(), Bulletin.Language.sv.toString()};
         for (String language: suffixes) {
             String text = resultSet.getString(columnPrefix + language);
             if (text != null) {
-                TranslatedString.Translation translation = TranslatedString.Translation.newBuilder()
+                InternalMessages.Bulletin.Translation translation = InternalMessages.Bulletin.Translation.newBuilder()
                         .setText(text)
                         .setLanguage(language).build();
 
-                builder.addTranslation(translation);
+                translations.add(translation);
             }
         }
-        return builder.build();
+        return translations;
     }
 
     static List<Long> parseListFromCommaSeparatedString(String value) {
@@ -124,11 +126,14 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    ,B.affected_stop_ids" +
                 "    ,PBMD.priority" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'fi' THEN BLM.title END) AS title_fi" +
-                "    ,MAX(CASE WHEN BLM.language_code = 'fi' THEN BLM.description END) AS text_fi" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'sv' THEN BLM.title END) AS title_sv" +
-                "    ,MAX(CASE WHEN BLM.language_code = 'sv' THEN BLM.description END) AS text_sv" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'en' THEN BLM.title END) AS title_en" +
+                "    ,MAX(CASE WHEN BLM.language_code = 'fi' THEN BLM.description END) AS text_fi" +
+                "    ,MAX(CASE WHEN BLM.language_code = 'sv' THEN BLM.description END) AS text_sv" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'en' THEN BLM.description END) AS text_en" +
+                "    ,MAX(CASE WHEN BLM.language_code = 'fi' THEN BLM.url END) AS url_fi" +
+                "    ,MAX(CASE WHEN BLM.language_code = 'sv' THEN BLM.url END) AS url_sv" +
+                "    ,MAX(CASE WHEN BLM.language_code = 'en' THEN BLM.url END) AS url_en" +
                 "  FROM [OMM_Community].[dbo].[bulletins] AS B" +
                 "    LEFT JOIN [OMM_Community].[dbo].bulletin_localized_messages AS BLM ON BLM.bulletins_id = B.bulletins_id" +
                 "    LEFT JOIN [OMM_Community].[dbo].passenger_bulletin_meta_data AS PBMD ON PBMD.bulletins_id = B.bulletins_id" +

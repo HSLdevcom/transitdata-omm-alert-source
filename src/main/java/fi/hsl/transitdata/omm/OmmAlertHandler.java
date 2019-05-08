@@ -1,7 +1,5 @@
 package fi.hsl.transitdata.omm;
 
-import com.google.transit.realtime.GtfsRealtime;
-import fi.hsl.common.gtfsrt.FeedMessageFactory;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
 import fi.hsl.common.transitdata.TransitdataProperties;
 import fi.hsl.common.transitdata.proto.InternalMessages;
@@ -18,7 +16,6 @@ import org.apache.pulsar.client.api.PulsarClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.transit.realtime.GtfsRealtime.*;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -134,26 +131,13 @@ public class OmmAlertHandler {
             builder.setImpact(bulletin.impact.toImpact());
             builder.setPriority(bulletin.priority.toPriority());
 
-            builder.addAllTitles(bulletin.headers.getTranslationList().stream()
-                    .map(translation -> InternalMessages.Bulletin.Translation.newBuilder()
-                            .setText(translation.getText())
-                            .setLanguage(translation.getLanguage())
-                            .build())
-                    .collect(Collectors.toList())
-            );
-
-            builder.addAllDescriptions(bulletin.descriptions.getTranslationList().stream()
-                    .map(translation -> InternalMessages.Bulletin.Translation.newBuilder()
-                            .setText(translation.getText())
-                            .setLanguage(translation.getLanguage())
-                            .build())
-                    .collect(Collectors.toList())
-            );
-
+            builder.addAllTitles(bulletin.titles);
+            builder.addAllDescriptions(bulletin.descriptions);
+            builder.addAllUrls(bulletin.urls);
 
             List<InternalMessages.Bulletin.AffectedEntity> affectedRoutes = getAffectedRoutes(bulletin, lines);
             List<InternalMessages.Bulletin.AffectedEntity> affectedStops = getAffectedStops(bulletin, stopPoints);
-            if (affectedRoutes.isEmpty() && affectedStops.isEmpty()) {
+            if (affectedRoutes.isEmpty() && affectedStops.isEmpty() && !bulletin.affectsAllRoutes && !bulletin.affectsAllStops) {
                 log.error("Failed to find any Affected Entities for bulletin Id {}. Discarding alert.", bulletin.id);
                 maybeBulletin = Optional.empty();
             }
