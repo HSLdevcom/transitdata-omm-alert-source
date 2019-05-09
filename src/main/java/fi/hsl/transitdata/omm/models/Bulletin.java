@@ -1,9 +1,9 @@
 package fi.hsl.transitdata.omm.models;
 
-import com.google.transit.realtime.GtfsRealtime;
 import fi.hsl.common.transitdata.proto.InternalMessages;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -83,44 +83,6 @@ public class Bulletin {
             }
         }
 
-        public GtfsRealtime.Alert.Cause toGtfsCause() {
-            switch (this) {
-                case OTHER_DRIVER_ERROR: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-                case ITS_SYSTEM_ERROR: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
-                case TOO_MANY_PASSENGERS: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-                case MISPARKED_VEHICLE: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-                case STRIKE: return GtfsRealtime.Alert.Cause.STRIKE;
-                case TEST: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-                case VEHICLE_OFF_THE_ROAD: return GtfsRealtime.Alert.Cause.ACCIDENT;
-                case TRAFFIC_ACCIDENT: return GtfsRealtime.Alert.Cause.ACCIDENT;
-                case SWITCH_FAILURE: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
-                case SEIZURE: return GtfsRealtime.Alert.Cause.MEDICAL_EMERGENCY;
-                case WEATHER: return GtfsRealtime.Alert.Cause.WEATHER;
-                case STATE_VISIT: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-                case ROAD_MAINTENANCE: return GtfsRealtime.Alert.Cause.MAINTENANCE;
-                case ROAD_CLOSED: return GtfsRealtime.Alert.Cause.CONSTRUCTION;
-                case TRACK_BLOCKED: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-                case WEATHER_CONDITIONS: return GtfsRealtime.Alert.Cause.WEATHER;
-                case ASSAULT: return GtfsRealtime.Alert.Cause.POLICE_ACTIVITY;
-                case TRACK_MAINTENANCE: return GtfsRealtime.Alert.Cause.MAINTENANCE;
-                case MEDICAL_INCIDENT: return GtfsRealtime.Alert.Cause.MEDICAL_EMERGENCY;
-                case EARLIER_DISRUPTION: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-                case TECHNICAL_FAILURE: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
-                case TRAFFIC_JAM: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-                case OTHER: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-                case NO_TRAFFIC_DISRUPTION: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-                case ACCIDENT: return GtfsRealtime.Alert.Cause.ACCIDENT;
-                case PUBLIC_EVENT: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-                case ROAD_TRENCH: return GtfsRealtime.Alert.Cause.CONSTRUCTION;
-                case VEHICLE_BREAKDOWN: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
-                case POWER_FAILURE: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
-                case STAFF_DEFICIT: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-                case DISTURBANCE: return GtfsRealtime.Alert.Cause.OTHER_CAUSE;
-                case VEHICLE_DEFICIT: return GtfsRealtime.Alert.Cause.TECHNICAL_PROBLEM;
-                default: return GtfsRealtime.Alert.Cause.UNKNOWN_CAUSE;
-            }
-        }
-
         public InternalMessages.Category toCategory() {
             return InternalMessages.Category.valueOf(this.toString());
         }
@@ -164,38 +126,6 @@ public class Bulletin {
             }
         }
 
-        /**
-         * @return possible GTFS-RT Effects:
-         * NO_SERVICE,
-         * REDUCED_SERVICE,
-         * SIGNIFICANT_DELAYS,
-         * DETOUR,
-         * ADDITIONAL_SERVICE,
-         * MODIFIED_SERVICE,
-         * OTHER_EFFECT,
-         * UNKNOWN_EFFECT,
-         * STOP_MOVED
-         */
-        public GtfsRealtime.Alert.Effect toGtfsEffect() {
-            switch (this) {
-                case CANCELLED: return GtfsRealtime.Alert.Effect.NO_SERVICE;
-                case DELAYED: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
-                case DEVIATING_SCHEDULE: return GtfsRealtime.Alert.Effect.MODIFIED_SERVICE;
-                case DISRUPTION_ROUTE: return GtfsRealtime.Alert.Effect.DETOUR;
-                case IRREGULAR_DEPARTURES: return GtfsRealtime.Alert.Effect.SIGNIFICANT_DELAYS;
-                case POSSIBLE_DEVIATIONS: return GtfsRealtime.Alert.Effect.MODIFIED_SERVICE;
-                case POSSIBLY_DELAYED: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
-                case REDUCED_TRANSPORT: return GtfsRealtime.Alert.Effect.REDUCED_SERVICE;
-                case RETURNING_TO_NORMAL: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
-                case VENDING_MACHINE_OUT_OF_ORDER: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
-                case NULL: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
-                case OTHER: return GtfsRealtime.Alert.Effect.OTHER_EFFECT;
-                case NO_TRAFFIC_IMPACT: return GtfsRealtime.Alert.Effect.NO_EFFECT;
-                case UNKNOWN: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
-                default: return GtfsRealtime.Alert.Effect.UNKNOWN_EFFECT;
-            }
-        }
-
         public InternalMessages.Bulletin.Impact toImpact() {
             return InternalMessages.Bulletin.Impact.valueOf(this.toString());
         }
@@ -221,22 +151,6 @@ public class Bulletin {
             }
         }
 
-        /**
-         * @return possible GTFS-RT Effects:
-         * UNKNOWN_SEVERITY,
-         * INFO,
-         * WARNING,
-         * SEVERE
-         */
-        public Optional<GtfsRealtime.Alert.SeverityLevel> toGtfsSeverityLevel() {
-            switch (this) {
-                case INFO: return Optional.of(GtfsRealtime.Alert.SeverityLevel.INFO);
-                case WARNING: return Optional.of(GtfsRealtime.Alert.SeverityLevel.WARNING);
-                case SEVERE: return Optional.of(GtfsRealtime.Alert.SeverityLevel.SEVERE);
-                default: return Optional.empty();
-            }
-        }
-
         public InternalMessages.Bulletin.Priority toPriority() {
             return InternalMessages.Bulletin.Priority.valueOf(this.toString());
         }
@@ -252,9 +166,10 @@ public class Bulletin {
     public boolean affectsAllStops;
     public List<Long> affectedLineGids;
     public List<Long> affectedStopGids;
-    public GtfsRealtime.TranslatedString descriptions;
-    public GtfsRealtime.TranslatedString headers;
     public Priority priority;
+    public List<InternalMessages.Bulletin.Translation> titles;
+    public List<InternalMessages.Bulletin.Translation> descriptions;
+    public List<InternalMessages.Bulletin.Translation> urls;
 
     public Bulletin() {}
 
@@ -271,9 +186,13 @@ public class Bulletin {
             affectedLineGids = new LinkedList<>(other.affectedLineGids);
         if (other.affectedStopGids != null)
             affectedStopGids = new LinkedList<>(other.affectedStopGids);
-        descriptions = other.descriptions;
-        headers = other.headers;
         priority = other.priority;
+        if (other.titles != null)
+            titles = new ArrayList<>(other.titles);
+        if (other.descriptions != null)
+            descriptions = new ArrayList<>(other.descriptions);
+        if (other.urls != null)
+            urls = new ArrayList<>(other.urls);
     }
 
 
@@ -303,9 +222,10 @@ public class Bulletin {
         same &= this.affectsAllStops == other.affectsAllStops;
         same &= equalsWithNullCheck(this.affectedLineGids, other.affectedLineGids);
         same &= equalsWithNullCheck(this.affectedStopGids, other.affectedStopGids);
-        same &= equalsWithNullCheck(this.descriptions, other.descriptions);
-        same &= equalsWithNullCheck(this.headers, other.headers);
         same &= this.priority == other.priority;
+        same &= equalsWithNullCheck(this.titles, other.titles);
+        same &= equalsWithNullCheck(this.descriptions, other.descriptions);
+        same &= equalsWithNullCheck(this.urls, other.urls);
 
         return same;
     }

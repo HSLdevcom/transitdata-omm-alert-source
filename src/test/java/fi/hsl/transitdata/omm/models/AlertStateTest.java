@@ -1,7 +1,6 @@
 package fi.hsl.transitdata.omm.models;
 
-import com.google.transit.realtime.GtfsRealtime;
-import fi.hsl.transitdata.omm.OmmAlertHandler;
+import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.omm.db.BulletinDAOMock;
 import fi.hsl.transitdata.omm.db.DAOImplBase;
 import fi.hsl.transitdata.omm.db.MockOmmConnector;
@@ -44,7 +43,7 @@ public class AlertStateTest {
     }
 
     private List<Bulletin> readDefaultTestBulletins() throws Exception {
-        MockOmmConnector connector = MockOmmConnector.newInstance("2019_04_alert_dump.tsv");
+        MockOmmConnector connector = MockOmmConnector.newInstance("2019_05_alert_dump.tsv");
         return connector.getBulletinDAO().getActiveBulletins();
     }
 
@@ -165,15 +164,25 @@ public class AlertStateTest {
         assertNotEquals(first, modified);
 
         modified = createModifiedAlertState(secondBulletins, bulletin -> {
-            GtfsRealtime.TranslatedString.Translation changedTranslation = bulletin.descriptions.getTranslation(0).toBuilder().setText("changing this").build();
-            bulletin.descriptions = bulletin.descriptions.toBuilder().removeTranslation(0).addTranslation(0, changedTranslation).build();
+            InternalMessages.Bulletin.Translation changedTranslation = bulletin.descriptions.get(0).toBuilder().setText("changing this").build();
+            bulletin.descriptions.remove(0);
+            bulletin.descriptions.add(0, changedTranslation);
             return bulletin;
         });
         assertNotEquals(first, modified);
 
         modified = createModifiedAlertState(secondBulletins, bulletin -> {
-            GtfsRealtime.TranslatedString.Translation changedTranslation = bulletin.headers.getTranslation(0).toBuilder().setText("changing the header").build();
-            bulletin.headers = bulletin.headers.toBuilder().removeTranslation(0).addTranslation(0, changedTranslation).build();
+            InternalMessages.Bulletin.Translation changedTranslation = bulletin.titles.get(0).toBuilder().setText("changing the header").build();
+            bulletin.titles.remove(0);
+            bulletin.titles.add(0, changedTranslation);
+            return bulletin;
+        });
+        assertNotEquals(first, modified);
+
+        modified = createModifiedAlertState(secondBulletins, bulletin -> {
+            InternalMessages.Bulletin.Translation changedTranslation = bulletin.urls.get(0).toBuilder().setText("changing the url").build();
+            bulletin.urls.remove(0);
+            bulletin.urls.add(0, changedTranslation);
             return bulletin;
         });
         assertNotEquals(first, modified);
@@ -203,6 +212,6 @@ public class AlertStateTest {
         Optional<LocalDateTime> maybeDt = state.lastModified();
         assertTrue(maybeDt.isPresent());
         String dt = DAOImplBase.OMM_DT_FORMATTER.format(maybeDt.get());
-        assertEquals("2019-04-08 15:21:24", dt);
+        assertEquals("2019-05-08 09:44:54", dt);
     }
 }
