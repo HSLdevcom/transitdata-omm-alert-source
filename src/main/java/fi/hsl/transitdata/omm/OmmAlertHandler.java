@@ -1,9 +1,8 @@
 package fi.hsl.transitdata.omm;
 
-import com.google.transit.realtime.GtfsRealtime;
-import fi.hsl.common.gtfsrt.FeedMessageFactory;
 import fi.hsl.common.pulsar.PulsarApplicationContext;
 import fi.hsl.common.transitdata.TransitdataProperties;
+import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.omm.db.BulletinDAO;
 import fi.hsl.transitdata.omm.db.LineDAO;
 import fi.hsl.transitdata.omm.db.OmmDbConnector;
@@ -17,7 +16,6 @@ import org.apache.pulsar.client.api.PulsarClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.transit.realtime.GtfsRealtime.*;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -64,12 +62,9 @@ public class OmmAlertHandler {
                 Map<Long, StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
 
                 final long timestampUtcMs = lastModifiedInUtcMs(latestState, timeZone);
-                final long timestampUtcSecs = timestampUtcMs / 1000;
 
-                List<FeedEntity> entities = createFeedEntities(bulletins, lines, stopPoints, timeZone);
-                GtfsRealtime.FeedMessage message = FeedMessageFactory.createFullFeedMessage(entities, timestampUtcSecs);
-
-                sendPulsarMessage(message, timestampUtcMs);
+                final InternalMessages.ServiceAlert alert = createServiceAlert(bulletins, lines, stopPoints, timeZone);
+                sendPulsarMessage(alert, timestampUtcMs);
             } else {
                 log.info("No changes to current Service Alerts.");
             }
@@ -89,125 +84,121 @@ public class OmmAlertHandler {
         return lastModified.map(localDateTime -> toUtcEpochMs(localDateTime, timezone)).orElse(System.currentTimeMillis());
     }
 
-
-    static List<FeedEntity> createFeedEntities(final List<Bulletin> bulletins, final Map<Long, Line> lines, final Map<Long, StopPoint> stopPoints, final String timeZone) {
-        return bulletins.stream().map(bulletin -> {
-            final Optional<Alert> maybeAlert = createAlert(bulletin, lines, stopPoints, timeZone);
-            return maybeAlert.map(alert -> {
-                FeedEntity.Builder builder = FeedEntity.newBuilder();
-                builder.setId(Long.toString(bulletin.id));
-                builder.setAlert(alert);
-                return builder.build();
-            });
-        }).filter(Optional::isPresent)
-          .map(Optional::get)
-          .collect(Collectors.toList());
+    static InternalMessages.ServiceAlert createServiceAlert(final List<Bulletin> bulletins, final Map<Long, Line> lines, final Map<Long, StopPoint> stopPoints, final String timeZone) {
+        final InternalMessages.ServiceAlert.Builder builder = InternalMessages.ServiceAlert.newBuilder();
+        builder.setSchemaVersion(builder.getSchemaVersion());
+        final List<InternalMessages.Bulletin> internalMessageBulletins = bulletins.stream()
+                .map(bulletin -> createBulletin(bulletin, lines, stopPoints, timeZone))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
+        builder.addAllBulletins(internalMessageBulletins);
+        return builder.build();
     }
 
-    public long toUtcEpochMs(LocalDateTime localTimestamp) {
-        return toUtcEpochMs(localTimestamp, timeZone);
-    }
-
-    private static long toUtcEpochSecs(LocalDateTime localTimestamp, String zoneId) {
-        return toUtcEpochMs(localTimestamp, zoneId) / 1000;
-    }
-
-    private static long toUtcEpochMs(LocalDateTime localTimestamp, String zoneId) {
+    private static long toUtcEpochMs(final LocalDateTime localTimestamp, final String zoneId) {
         ZoneId zone = ZoneId.of(zoneId);
         return localTimestamp.atZone(zone).toInstant().toEpochMilli();
     }
 
-    static Optional<Alert> createAlert(Bulletin bulletin, Map<Long, Line> lines, Map<Long, StopPoint> stopPoints, final String timezone) {
-        Optional<Alert> maybeAlert = Optional.empty();
+    static Optional<InternalMessages.Bulletin> createBulletin(final Bulletin bulletin, final Map<Long, Line> lines, final Map<Long, StopPoint> stopPoints, final String timezone) {
+        Optional<InternalMessages.Bulletin> maybeBulletin;
         try {
-            Optional<Long> startInUtcSecs = bulletin.validFrom.map(from -> toUtcEpochSecs(from, timezone));
-            Optional<Long> stopInUtcSecs = bulletin.validTo.map(to -> toUtcEpochSecs(to, timezone));
+            final InternalMessages.Bulletin.Builder builder = InternalMessages.Bulletin.newBuilder();
 
-            Optional<TimeRange> timeRange = startInUtcSecs.flatMap(start ->
-                    stopInUtcSecs.map(stop ->
-                        TimeRange.newBuilder()
-                                .setStart(start)
-                                .setEnd(stop)
-                                .build()
-            ));
+            builder.setBulletinId(Long.toString(bulletin.id));
+            builder.setCategory(bulletin.category.toCategory());
 
-            final Alert.Builder builder = Alert.newBuilder();
-            if (timeRange.isPresent()) {
-                builder.addActivePeriod(timeRange.get());
+            long lastModifiedInUtcMs = toUtcEpochMs(bulletin.lastModified, timezone);
+            builder.setLastModifiedUtcMs(lastModifiedInUtcMs);
+
+            Optional<Long> startInUtcMs = bulletin.validFrom.map(from -> toUtcEpochMs(from, timezone));
+            if (startInUtcMs.isPresent()) {
+                builder.setValidFromUtcMs(startInUtcMs.get());
             } else {
-                log.error("No timerange specified for bulletin {}", bulletin.id);
+                log.error("No start time specified for bulletin {}", bulletin.id);
             }
-            builder.setCause(bulletin.category.toGtfsCause());
-            builder.setEffect(bulletin.impact.toGtfsEffect());
-            builder.setDescriptionText(bulletin.descriptions);
-            builder.setHeaderText(bulletin.headers);
-            final Optional<Alert.SeverityLevel> maybeSeverityLevel = bulletin.priority.toGtfsSeverityLevel();
-            maybeSeverityLevel.map(severityLevel -> builder.setSeverityLevel(severityLevel));
 
-            List<EntitySelector> entitySelectors = entitySelectorsForBulletin(bulletin, lines, stopPoints);
-            if (entitySelectors.isEmpty()) {
-                log.error("Failed to find any Informed Entities for bulletin Id {}. Discarding alert.", bulletin.id);
-                maybeAlert = Optional.empty();
+            Optional<Long> stopInUtcMs = bulletin.validTo.map(to -> toUtcEpochMs(to, timezone));
+            if (stopInUtcMs.isPresent()) {
+                builder.setValidToUtcMs(stopInUtcMs.get());
+            } else {
+                log.error("No end time specified for bulletin {}", bulletin.id);
+            }
+
+            builder.setAffectsAllRoutes(bulletin.affectsAllRoutes);
+            builder.setAffectsAllStops(bulletin.affectsAllStops);
+            builder.setImpact(bulletin.impact.toImpact());
+            builder.setPriority(bulletin.priority.toPriority());
+
+            builder.addAllTitles(bulletin.titles);
+            builder.addAllDescriptions(bulletin.descriptions);
+            builder.addAllUrls(bulletin.urls);
+
+            List<InternalMessages.Bulletin.AffectedEntity> affectedRoutes = getAffectedRoutes(bulletin, lines);
+            List<InternalMessages.Bulletin.AffectedEntity> affectedStops = getAffectedStops(bulletin, stopPoints);
+            if (affectedRoutes.isEmpty() && affectedStops.isEmpty() && !bulletin.affectsAllRoutes && !bulletin.affectsAllStops) {
+                log.error("Failed to find any Affected Entities for bulletin Id {}. Discarding alert.", bulletin.id);
+                maybeBulletin = Optional.empty();
             }
             else {
-                builder.addAllInformedEntity(entitySelectors);
-                maybeAlert = Optional.of(builder.build());
+                builder.addAllAffectedRoutes(affectedRoutes);
+                builder.addAllAffectedStops(affectedStops);
+                maybeBulletin = Optional.of(builder.build());
             }
         }
         catch (Exception e) {
             log.error("Exception while creating an alert!", e);
-            maybeAlert = Optional.empty();
+            maybeBulletin = Optional.empty();
         }
-        return maybeAlert;
+        return maybeBulletin;
     }
 
-    static List<EntitySelector> entitySelectorsForBulletin(Bulletin bulletin, Map<Long, Line> lines, Map<Long, StopPoint> stopPoints) {
-        List<EntitySelector> selectors = new LinkedList<>();
-        if (bulletin.affectsAllRoutes || bulletin.affectsAllStops) {
-            log.debug("Bulletin {} affects all routes or stops", bulletin.id);
-
-            EntitySelector agency = EntitySelector.newBuilder()
-                    .setAgencyId(AGENCY_ENTITY_SELECTOR)
-                    .build();
-            selectors.add(agency);
-        } else if (bulletin.affectedLineGids.size() > 0) {
+    static List<InternalMessages.Bulletin.AffectedEntity> getAffectedRoutes(final Bulletin bulletin, final Map<Long, Line> routes) {
+        List<InternalMessages.Bulletin.AffectedEntity> affectedRoutes = new LinkedList<>();
+        if (bulletin.affectedLineGids.size() > 0) {
             for (Long lineGid : bulletin.affectedLineGids) {
-                Optional<Line> line = Optional.ofNullable(lines.get(lineGid));
-                if (line.isPresent()) {
-                    String lineId = line.get().lineId;
-                    EntitySelector entity = EntitySelector.newBuilder()
-                            .setRouteId(lineId).build();
-                    selectors.add(entity);
+                Optional<Line> route = Optional.ofNullable(routes.get(lineGid));
+                if (route.isPresent()) {
+                    String lineId = route.get().lineId;
+                    InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
+                            .setEntityId(lineId).build();
+                    affectedRoutes.add(entity);
                 }
                 else {
                     log.error("Failed to find line ID for line GID: {}", lineGid);
                 }
             }
-            log.debug("Found {} entity selectors for routes (should have been {})", selectors.size(), bulletin.affectedLineGids.size());
-        } else if (bulletin.affectedStopGids.size() > 0) {
+            log.debug("Found {} entity selectors for routes (should have been {})", affectedRoutes.size(), bulletin.affectedLineGids.size());
+        }
+        return affectedRoutes;
+    }
+
+    static List<InternalMessages.Bulletin.AffectedEntity> getAffectedStops(final Bulletin bulletin, final Map<Long, StopPoint> stops) {
+        List<InternalMessages.Bulletin.AffectedEntity> affectedStops = new LinkedList<>();
+        if (bulletin.affectedStopGids.size() > 0) {
             for (Long stopGid : bulletin.affectedStopGids) {
-                Optional<StopPoint> stop = Optional.ofNullable(stopPoints.get(stopGid));
+                Optional<StopPoint> stop = Optional.ofNullable(stops.get(stopGid));
                 if (stop.isPresent()) {
                     String stopId = stop.get().stopId;
-                    EntitySelector entity = EntitySelector.newBuilder()
-                            .setStopId(stopId).build();
-                    selectors.add(entity);
+                    InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
+                            .setEntityId(stopId).build();
+                    affectedStops.add(entity);
                 }
                 else {
                     log.error("Failed to find stop ID for stop GID: {}", stopGid);
                 }
             }
-            log.debug("Found {} entity selectors for routes (should have been {})", selectors.size(), bulletin.affectedStopGids.size());
+            log.debug("Found {} entity selectors for routes (should have been {})", affectedStops.size(), bulletin.affectedStopGids.size());
         }
-
-        return selectors;
+        return affectedStops;
     }
 
-    private void sendPulsarMessage(GtfsRealtime.FeedMessage message, long timestamp) throws PulsarClientException {
+    private void sendPulsarMessage(final InternalMessages.ServiceAlert message, long timestamp) throws PulsarClientException {
         try {
             producer.newMessage().value(message.toByteArray())
                     .eventTime(timestamp)
-                    .property(TransitdataProperties.KEY_PROTOBUF_SCHEMA, TransitdataProperties.ProtobufSchema.GTFS_ServiceAlert.toString())
+                    .property(TransitdataProperties.KEY_PROTOBUF_SCHEMA, TransitdataProperties.ProtobufSchema.TransitdataServiceAlert.toString())
                     .send();
 
             log.info("Produced a new alert with timestamp {}", timestamp);
@@ -221,5 +212,4 @@ public class OmmAlertHandler {
             log.error("Failed to handle alert message", e);
         }
     }
-
 }
