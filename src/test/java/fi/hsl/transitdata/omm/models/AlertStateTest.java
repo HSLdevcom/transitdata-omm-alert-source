@@ -209,9 +209,8 @@ public class AlertStateTest {
     public void testLastModified() throws Exception {
         List<Bulletin> bulletins = readDefaultTestBulletins();
         AlertState state = new AlertState(bulletins);
-        Optional<LocalDateTime> maybeDt = state.lastModified();
-        assertTrue(maybeDt.isPresent());
-        String dt = DAOImplBase.OMM_DT_FORMATTER.format(maybeDt.get());
+        LocalDateTime lastModified = state.lastModified();
+        String dt = DAOImplBase.OMM_DT_FORMATTER.format(lastModified);
         assertEquals("2019-05-08 09:44:54", dt);
     }
 }
