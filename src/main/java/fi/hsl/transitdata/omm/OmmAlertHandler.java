@@ -77,11 +77,8 @@ public class OmmAlertHandler {
 
     static long lastModifiedInUtcMs(AlertState state, String timezone) {
         // We want to keep Pulsar internal timestamps as accurate as possible (ms) but GTFS-RT expects seconds
-        Optional<LocalDateTime> lastModified = state.lastModified();
-        if (!lastModified.isPresent()) {
-            log.error("Could not determine last modified timestamp from AlertState! Using currentTimeMillis().");
-        }
-        return lastModified.map(localDateTime -> toUtcEpochMs(localDateTime, timezone)).orElse(System.currentTimeMillis());
+
+        return toUtcEpochMs(state.lastModified(), timezone);
     }
 
     static InternalMessages.ServiceAlert createServiceAlert(final List<Bulletin> bulletins, final Map<Long, Line> lines, final Map<Long, StopPoint> stopPoints, final String timeZone) {

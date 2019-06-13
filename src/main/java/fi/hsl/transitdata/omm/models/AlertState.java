@@ -51,10 +51,8 @@ public class AlertState {
         return true;
     }
 
-    public Optional<LocalDateTime> lastModified() {
-        return alerts.stream()
-                .map(bulletin -> bulletin.lastModified)
-                .max(Comparator.naturalOrder());
+    public LocalDateTime lastModified() {
+        return LocalDateTime.now();
     }
 
     static List<Bulletin> asSorted(List<Bulletin> list) {
