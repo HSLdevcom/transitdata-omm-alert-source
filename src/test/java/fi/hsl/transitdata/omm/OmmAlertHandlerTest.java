@@ -2,7 +2,6 @@ package fi.hsl.transitdata.omm;
 
 import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.omm.db.MockOmmConnector;
-import fi.hsl.transitdata.omm.models.AlertState;
 import fi.hsl.transitdata.omm.models.Bulletin;
 import fi.hsl.transitdata.omm.models.Line;
 import fi.hsl.transitdata.omm.models.StopPoint;
@@ -84,15 +83,6 @@ public class OmmAlertHandlerTest {
 
         assertEquals(3, bulletin.getTitlesCount());
         assertEquals(3, bulletin.getDescriptionsCount());
-    }
-
-    @Test
-    public void testTimestampConversion() throws Exception {
-        MockOmmConnector connector = readDefaultMockData();
-        List<Bulletin> bulletins = connector.getBulletinDAO().getActiveBulletins();
-        AlertState state = new AlertState(bulletins);
-        long utcMs = OmmAlertHandler.lastModifiedInUtcMs(state, TIMEZONE);
-        assertEquals(1557297894827L, utcMs);
     }
 
     @Test

@@ -2,7 +2,6 @@ package fi.hsl.transitdata.omm.models;
 
 import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.omm.db.BulletinDAOMock;
-import fi.hsl.transitdata.omm.db.DAOImplBase;
 import fi.hsl.transitdata.omm.db.MockOmmConnector;
 import org.junit.Test;
 
@@ -203,15 +202,5 @@ public class AlertStateTest {
         copyList.set(indexToModify, modified);
 
         return new AlertState(copyList);
-    }
-
-    @Test
-    public void testLastModified() throws Exception {
-        List<Bulletin> bulletins = readDefaultTestBulletins();
-        AlertState state = new AlertState(bulletins);
-        Optional<LocalDateTime> maybeDt = state.lastModified();
-        assertTrue(maybeDt.isPresent());
-        String dt = DAOImplBase.OMM_DT_FORMATTER.format(maybeDt.get());
-        assertEquals("2019-05-08 09:44:54", dt);
     }
 }
