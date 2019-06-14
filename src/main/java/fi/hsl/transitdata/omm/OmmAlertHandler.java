@@ -61,10 +61,11 @@ public class OmmAlertHandler {
                 Map<Long, Line> lines = lineDAO.getAllLines();
                 Map<Long, StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
 
-                final long timestampUtcMs = lastModifiedInUtcMs(latestState, timeZone);
+                // We want to keep Pulsar internal timestamps as accurate as possible (ms) but GTFS-RT expects milliseconds
+                final long currentTimestampUtcMs = toUtcEpochMs(LocalDateTime.now(), timeZone);
 
                 final InternalMessages.ServiceAlert alert = createServiceAlert(bulletins, lines, stopPoints, timeZone);
-                sendPulsarMessage(alert, timestampUtcMs);
+                sendPulsarMessage(alert, currentTimestampUtcMs);
             } else {
                 log.info("No changes to current Service Alerts.");
             }
@@ -73,12 +74,6 @@ public class OmmAlertHandler {
         finally {
             ommConnector.close();
         }
-    }
-
-    static long lastModifiedInUtcMs(AlertState state, String timezone) {
-        // We want to keep Pulsar internal timestamps as accurate as possible (ms) but GTFS-RT expects seconds
-
-        return toUtcEpochMs(state.lastModified(), timezone);
     }
 
     static InternalMessages.ServiceAlert createServiceAlert(final List<Bulletin> bulletins, final Map<Long, Line> lines, final Map<Long, StopPoint> stopPoints, final String timeZone) {

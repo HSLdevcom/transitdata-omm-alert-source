@@ -51,10 +51,6 @@ public class AlertState {
         return true;
     }
 
-    public LocalDateTime lastModified() {
-        return LocalDateTime.now();
-    }
-
     static List<Bulletin> asSorted(List<Bulletin> list) {
         return list.stream().sorted(Comparator.comparingLong(bulletin -> bulletin.id)).collect(Collectors.toList());
     }
