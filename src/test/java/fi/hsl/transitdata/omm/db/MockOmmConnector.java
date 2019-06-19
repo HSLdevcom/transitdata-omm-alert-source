@@ -74,10 +74,6 @@ public class MockOmmConnector {
         return bulletinDAO;
     }
 
-    public static String lineGidToLineId(long gid) {
-        return "line-" + Long.toString(gid);
-    }
-
     public static String lineGidToRouteId(long gid) {
         return "line-" + Long.toString(gid);
     }
@@ -94,9 +90,8 @@ public class MockOmmConnector {
                     .collect(Collectors.toMap(
                             gid -> gid,
                             gid -> {
-                                Line line = new Line(gid, lineGidToLineId(gid));
+                                Line line = new Line(gid);
                                 line.addRouteToLine(new Route(gid, lineGidToRouteId(gid)));
-
                                 return line;
                             },
                             (oldId, newId) -> oldId) //Merge by just throwing away duplicates

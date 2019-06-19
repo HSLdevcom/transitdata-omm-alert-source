@@ -79,7 +79,7 @@ public class OmmAlertHandlerTest {
 
         InternalMessages.Bulletin.AffectedEntity route = bulletin.getAffectedRoutes(0);
         assertTrue(route.hasEntityId());
-        assertEquals(MockOmmConnector.lineGidToLineId(9011301065700000L), route.getEntityId());
+        assertEquals(MockOmmConnector.lineGidToRouteId(9011301065700000L), route.getEntityId());
 
         assertEquals(3, bulletin.getTitlesCount());
         assertEquals(3, bulletin.getDescriptionsCount());

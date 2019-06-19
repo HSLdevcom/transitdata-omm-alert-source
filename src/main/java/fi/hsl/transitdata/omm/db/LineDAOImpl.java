@@ -42,7 +42,7 @@ public class LineDAOImpl extends DAOImplBase implements LineDAO {
             if (lines.containsKey(lineGid)) {
                 line = lines.get(lineGid);
             } else {
-                line = new Line(lineGid, routeId);
+                line = new Line(lineGid);
                 lines.put(line.gid, line);
             }
             line.addRouteToLine(route);

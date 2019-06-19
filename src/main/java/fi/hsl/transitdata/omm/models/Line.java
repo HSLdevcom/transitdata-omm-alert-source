@@ -4,15 +4,13 @@ import java.util.ArrayList;
 
 public class Line {
     public long gid;
-    public String lineId;
     public ArrayList<Route> routes;
 
     public Line() {}
 
-    public Line(long gid, String id) {
+    public Line(long gid) {
         this.gid = gid;
-        this.lineId = id;
-        this.routes = new ArrayList<Route>();
+        this.routes = new ArrayList<>();
     }
 
     public void addRouteToLine(Route route) {
