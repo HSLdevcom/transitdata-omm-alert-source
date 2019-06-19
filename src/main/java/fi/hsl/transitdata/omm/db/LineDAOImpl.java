@@ -1,14 +1,15 @@
 package fi.hsl.transitdata.omm.db;
 
 import fi.hsl.transitdata.omm.models.Line;
+import fi.hsl.transitdata.omm.models.Route;
+import fi.hsl.common.files.FileUtils;
 
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 public class LineDAOImpl extends DAOImplBase implements LineDAO {
@@ -25,36 +26,34 @@ public class LineDAOImpl extends DAOImplBase implements LineDAO {
         try (PreparedStatement statement = connection.prepareStatement(queryString)) {
             ResultSet results = performQuery(statement);
             return parseLines(results);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("Error while  querying and processing Lines", e);
             throw e;
         }
     }
 
-    private Map<Long, Line>  parseLines(ResultSet resultSet) throws SQLException {
+    private Map<Long, Line> parseLines(ResultSet resultSet) throws SQLException {
         Map<Long, Line> lines = new HashMap<>();
         while (resultSet.next()) {
-            Line line = new Line();
-            line.gid = resultSet.getLong("Gid");;
-            line.lineId = resultSet.getString("StringValue");
-            lines.put(line.gid, line);
+            long lineGid = resultSet.getLong("Gid");
+            String routeId = resultSet.getString("StringValue");
+            Route route = new Route(lineGid, routeId);
+            Line line;
+            if (lines.containsKey(lineGid)) {
+                line = lines.get(lineGid);
+            } else {
+                line = new Line(lineGid, routeId);
+                lines.put(line.gid, line);
+            }
+            line.addRouteToLine(route);
         }
         return lines;
     }
 
+
     private String createQuery() {
-        return "SELECT " +
-                "  L.Gid," +
-                "  KVV.StringValue" +
-                "  FROM [ptDOI4_Community].[dbo].[Line] AS L" +
-                "  JOIN [ptDOI4_Community].[L].[doi4_KeyVariantValue] AS KVV ON KVV.IsForObjectId = L.Id" +
-                "  JOIN [ptDOI4_Community].[dbo].[KeyVariantType] AS KVT ON KVT.Id = KVV.IsOfKeyVariantTypeId" +
-                "  JOIN [ptDOI4_Community].[dbo].[KeyType] AS KT ON KT.Id = KVT.IsForKeyTypeId" +
-                "  JOIN [ptDOI4_Community].[dbo].[ObjectType] AS OT ON OT.Number = KT.ExtendsObjectTypeNumber" +
-                "  WHERE KT.Name = 'JoreIdentity'" +
-                "  GROUP BY L.Gid, KVV.StringValue" +
-                "  ORDER BY L.Gid DESC";
+        URL resource = getClass().getClassLoader().getResource("routes.sql");
+        return FileUtils.readFileFromURLOrThrow(resource);
     }
 
 }

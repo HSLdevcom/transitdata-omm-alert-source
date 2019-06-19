@@ -10,6 +10,7 @@ import fi.hsl.transitdata.omm.db.StopPointDAO;
 import fi.hsl.transitdata.omm.models.AlertState;
 import fi.hsl.transitdata.omm.models.Bulletin;
 import fi.hsl.transitdata.omm.models.Line;
+import fi.hsl.transitdata.omm.models.Route;
 import fi.hsl.transitdata.omm.models.StopPoint;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClientException;
@@ -19,10 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class OmmAlertHandler {
@@ -146,19 +144,22 @@ public class OmmAlertHandler {
         return maybeBulletin;
     }
 
-    static List<InternalMessages.Bulletin.AffectedEntity> getAffectedRoutes(final Bulletin bulletin, final Map<Long, Line> routes) {
+    static List<InternalMessages.Bulletin.AffectedEntity> getAffectedRoutes(final Bulletin bulletin, final Map<Long, Line> lines) {
         List<InternalMessages.Bulletin.AffectedEntity> affectedRoutes = new LinkedList<>();
+        LocalDateTime timeNow = LocalDateTime.now();
         if (bulletin.affectedLineGids.size() > 0) {
             for (Long lineGid : bulletin.affectedLineGids) {
-                Optional<Line> route = Optional.ofNullable(routes.get(lineGid));
-                if (route.isPresent()) {
-                    String lineId = route.get().lineId;
-                    InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
-                            .setEntityId(lineId).build();
-                    affectedRoutes.add(entity);
+                Optional<Line> line = Optional.ofNullable(lines.get(lineGid));
+                if (line.isPresent()) {
+                    ArrayList<Route> routes = line.get().routes;
+                    routes.forEach((route) -> {
+                        InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
+                                .setEntityId(route.routeId).build();
+                        affectedRoutes.add(entity);
+                    });
                 }
                 else {
-                    log.error("Failed to find line ID for line GID: {}", lineGid);
+                    log.error("Failed to find line ID for line GID: {}, bulletin id: {}", lineGid, bulletin.id);
                 }
             }
             log.debug("Found {} entity selectors for routes (should have been {})", affectedRoutes.size(), bulletin.affectedLineGids.size());
@@ -194,7 +195,6 @@ public class OmmAlertHandler {
                     .send();
 
             log.info("Produced a new alert with timestamp {}", timestamp);
-
         }
         catch (PulsarClientException pe) {
             log.error("Failed to send message to Pulsar", pe);
