@@ -53,7 +53,13 @@ public class LineDAOImpl extends DAOImplBase implements LineDAO {
 
     private String createQuery() {
         URL resource = getClass().getClassLoader().getResource("routes.sql");
-        return FileUtils.readFileFromURLOrThrow(resource);
+        try {
+            return FileUtils.readFileFromURLOrThrow(resource);
+        } catch (Exception e) {
+            log.error("Could not read query text file at " + resource, e);
+            return null;
+        }
+
     }
 
 }

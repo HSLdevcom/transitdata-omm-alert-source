@@ -194,7 +194,7 @@ public class OmmAlertHandler {
                     .property(TransitdataProperties.KEY_PROTOBUF_SCHEMA, TransitdataProperties.ProtobufSchema.TransitdataServiceAlert.toString())
                     .send();
 
-            log.info("Produced a new alert with timestamp {}", timestamp);
+            log.info("Produced a new alert of {} bulletins with timestamp {}", message.getBulletinsCount(), timestamp);
         }
         catch (PulsarClientException pe) {
             log.error("Failed to send message to Pulsar", pe);
