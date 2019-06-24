@@ -4,7 +4,7 @@ import fi.hsl.transitdata.omm.models.Line;
 import fi.hsl.transitdata.omm.models.Route;
 import fi.hsl.common.files.FileUtils;
 
-import java.net.URL;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -50,16 +50,14 @@ public class LineDAOImpl extends DAOImplBase implements LineDAO {
         return lines;
     }
 
-
     private String createQuery() {
-        URL resource = getClass().getClassLoader().getResource("routes.sql");
+        InputStream stream = getClass().getResourceAsStream("/routes.sql");
         try {
-            return FileUtils.readFileFromURLOrThrow(resource);
+            return FileUtils.readFileFromStreamOrThrow(stream);
         } catch (Exception e) {
-            log.error("Could not read query text file at " + resource, e);
+            log.error("Error in reading sql from file:", e);
             return null;
         }
-
     }
 
 }
