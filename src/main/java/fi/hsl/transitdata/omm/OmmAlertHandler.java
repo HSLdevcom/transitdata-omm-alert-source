@@ -10,6 +10,7 @@ import fi.hsl.transitdata.omm.db.StopPointDAO;
 import fi.hsl.transitdata.omm.models.AlertState;
 import fi.hsl.transitdata.omm.models.Bulletin;
 import fi.hsl.transitdata.omm.models.Line;
+import fi.hsl.transitdata.omm.models.Route;
 import fi.hsl.transitdata.omm.models.StopPoint;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClientException;
@@ -19,10 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class OmmAlertHandler {
@@ -61,10 +59,11 @@ public class OmmAlertHandler {
                 Map<Long, Line> lines = lineDAO.getAllLines();
                 Map<Long, StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
 
-                final long timestampUtcMs = lastModifiedInUtcMs(latestState, timeZone);
+                // We want to keep Pulsar internal timestamps as accurate as possible (ms) but GTFS-RT expects milliseconds
+                final long currentTimestampUtcMs = toUtcEpochMs(LocalDateTime.now(), timeZone);
 
                 final InternalMessages.ServiceAlert alert = createServiceAlert(bulletins, lines, stopPoints, timeZone);
-                sendPulsarMessage(alert, timestampUtcMs);
+                sendPulsarMessage(alert, currentTimestampUtcMs);
             } else {
                 log.info("No changes to current Service Alerts.");
             }
@@ -73,15 +72,6 @@ public class OmmAlertHandler {
         finally {
             ommConnector.close();
         }
-    }
-
-    static long lastModifiedInUtcMs(AlertState state, String timezone) {
-        // We want to keep Pulsar internal timestamps as accurate as possible (ms) but GTFS-RT expects seconds
-        Optional<LocalDateTime> lastModified = state.lastModified();
-        if (!lastModified.isPresent()) {
-            log.error("Could not determine last modified timestamp from AlertState! Using currentTimeMillis().");
-        }
-        return lastModified.map(localDateTime -> toUtcEpochMs(localDateTime, timezone)).orElse(System.currentTimeMillis());
     }
 
     static InternalMessages.ServiceAlert createServiceAlert(final List<Bulletin> bulletins, final Map<Long, Line> lines, final Map<Long, StopPoint> stopPoints, final String timeZone) {
@@ -154,19 +144,22 @@ public class OmmAlertHandler {
         return maybeBulletin;
     }
 
-    static List<InternalMessages.Bulletin.AffectedEntity> getAffectedRoutes(final Bulletin bulletin, final Map<Long, Line> routes) {
+    static List<InternalMessages.Bulletin.AffectedEntity> getAffectedRoutes(final Bulletin bulletin, final Map<Long, Line> lines) {
         List<InternalMessages.Bulletin.AffectedEntity> affectedRoutes = new LinkedList<>();
+        LocalDateTime timeNow = LocalDateTime.now();
         if (bulletin.affectedLineGids.size() > 0) {
             for (Long lineGid : bulletin.affectedLineGids) {
-                Optional<Line> route = Optional.ofNullable(routes.get(lineGid));
-                if (route.isPresent()) {
-                    String lineId = route.get().lineId;
-                    InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
-                            .setEntityId(lineId).build();
-                    affectedRoutes.add(entity);
+                Optional<Line> line = Optional.ofNullable(lines.get(lineGid));
+                if (line.isPresent()) {
+                    ArrayList<Route> routes = line.get().routes;
+                    routes.forEach((route) -> {
+                        InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
+                                .setEntityId(route.routeId).build();
+                        affectedRoutes.add(entity);
+                    });
                 }
                 else {
-                    log.error("Failed to find line ID for line GID: {}", lineGid);
+                    log.error("Failed to find line ID for line GID: {}, bulletin id: {}", lineGid, bulletin.id);
                 }
             }
             log.debug("Found {} entity selectors for routes (should have been {})", affectedRoutes.size(), bulletin.affectedLineGids.size());
@@ -201,8 +194,7 @@ public class OmmAlertHandler {
                     .property(TransitdataProperties.KEY_PROTOBUF_SCHEMA, TransitdataProperties.ProtobufSchema.TransitdataServiceAlert.toString())
                     .send();
 
-            log.info("Produced a new alert with timestamp {}", timestamp);
-
+            log.info("Produced a new alert of {} bulletins with timestamp {}", message.getBulletinsCount(), timestamp);
         }
         catch (PulsarClientException pe) {
             log.error("Failed to send message to Pulsar", pe);

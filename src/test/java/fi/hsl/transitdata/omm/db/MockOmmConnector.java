@@ -2,6 +2,7 @@ package fi.hsl.transitdata.omm.db;
 
 import fi.hsl.transitdata.omm.models.Bulletin;
 import fi.hsl.transitdata.omm.models.Line;
+import fi.hsl.transitdata.omm.models.Route;
 import fi.hsl.transitdata.omm.models.StopPoint;
 
 import java.io.BufferedReader;
@@ -73,7 +74,7 @@ public class MockOmmConnector {
         return bulletinDAO;
     }
 
-    public static String lineGidToLineId(long gid) {
+    public static String lineGidToRouteId(long gid) {
         return "line-" + Long.toString(gid);
     }
 
@@ -88,7 +89,11 @@ public class MockOmmConnector {
                     .flatMap(bulletin -> bulletin.affectedLineGids.stream())
                     .collect(Collectors.toMap(
                             gid -> gid,
-                            gid -> new Line(gid, lineGidToLineId(gid)),
+                            gid -> {
+                                Line line = new Line(gid);
+                                line.addRouteToLine(new Route(gid, lineGidToRouteId(gid)));
+                                return line;
+                            },
                             (oldId, newId) -> oldId) //Merge by just throwing away duplicates
                     );
         }
