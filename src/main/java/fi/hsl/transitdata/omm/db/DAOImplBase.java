@@ -40,6 +40,11 @@ public class DAOImplBase {
         return localDatetimeAsString(Instant.now(), zoneId);
     }
 
+    static String pastLocalDatetimeAsString(String zoneId, int intervalSecs) {
+        Instant pastNow = Instant.now().minusSeconds(intervalSecs);
+        return localDatetimeAsString(pastNow, zoneId);
+    }
+
     static String localDatetimeAsString(Instant instant, String zoneId) {
         return OMM_DT_FORMATTER.format(instant.atZone(ZoneId.of(zoneId)));
     }
