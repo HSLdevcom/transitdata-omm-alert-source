@@ -27,6 +27,7 @@ public class Main {
             final Config config = ConfigParser.createConfig();
             final String connectionString = readConnectionString();
             final int pollIntervalInSeconds = config.getInt("omm.interval");
+            log.info("Starting omm alert source with poll interval (s): {}", pollIntervalInSeconds);
 
             final PulsarApplication app = PulsarApplication.newInstance(config);
             final OmmDbConnector omm = new OmmDbConnector(config, pollIntervalInSeconds, connectionString);
