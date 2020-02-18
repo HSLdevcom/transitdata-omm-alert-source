@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -32,6 +33,8 @@ public class OmmAlertHandler {
     String timeZone;
     private final Producer<byte[]> producer;
     private AlertState previousState = null;
+    private Map<Long, Line> lines = null;
+    private LocalDate linesUpdateDate = null;
 
     OmmDbConnector ommConnector;
 
@@ -53,10 +56,14 @@ public class OmmAlertHandler {
             List<Bulletin> bulletins = bulletinDAO.getActiveBulletins();
             AlertState latestState = new AlertState(bulletins);
 
+            if (linesUpdateDate != LocalDate.now()) {
+                lines = lineDAO.getAllLines();
+                linesUpdateDate = LocalDate.now();
+            }
+
             if (!latestState.equals(previousState)) {
                 log.info("Service Alerts changed, creating new FeedMessage.");
 
-                Map<Long, Line> lines = lineDAO.getAllLines();
                 Map<Long, StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
 
                 // We want to keep Pulsar internal timestamps as accurate as possible (ms) but GTFS-RT expects milliseconds
@@ -128,7 +135,7 @@ public class OmmAlertHandler {
             List<InternalMessages.Bulletin.AffectedEntity> affectedRoutes = getAffectedRoutes(bulletin, lines);
             List<InternalMessages.Bulletin.AffectedEntity> affectedStops = getAffectedStops(bulletin, stopPoints);
             if (affectedRoutes.isEmpty() && affectedStops.isEmpty() && !bulletin.affectsAllRoutes && !bulletin.affectsAllStops) {
-                log.error("Failed to find any Affected Entities for bulletin Id {}. Discarding alert.", bulletin.id);
+                log.warn("Failed to find any Affected Entities for bulletin Id {}. Discarding alert.", bulletin.id);
                 maybeBulletin = Optional.empty();
             }
             else {
@@ -146,16 +153,20 @@ public class OmmAlertHandler {
 
     static List<InternalMessages.Bulletin.AffectedEntity> getAffectedRoutes(final Bulletin bulletin, final Map<Long, Line> lines) {
         List<InternalMessages.Bulletin.AffectedEntity> affectedRoutes = new LinkedList<>();
-        LocalDateTime timeNow = LocalDateTime.now();
         if (bulletin.affectedLineGids.size() > 0) {
             for (Long lineGid : bulletin.affectedLineGids) {
                 Optional<Line> line = Optional.ofNullable(lines.get(lineGid));
                 if (line.isPresent()) {
-                    ArrayList<Route> routes = line.get().routes;
+                    List<Route> routes = line.get().routes;
+                    routes = routes.stream()
+                            .filter(route -> entityIsTimeValidForBulletin(bulletin, route.existsFromDate, route.existsUptoDate))
+                            .collect(Collectors.toList());
                     routes.forEach((route) -> {
                         InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
                                 .setEntityId(route.routeId).build();
-                        affectedRoutes.add(entity);
+                        if (!affectedRoutes.contains(entity)) {
+                            affectedRoutes.add(entity);
+                        }
                     });
                 }
                 else {
@@ -167,19 +178,36 @@ public class OmmAlertHandler {
         return affectedRoutes;
     }
 
+    static boolean entityIsTimeValidForBulletin(final Bulletin bulletin, final Optional<LocalDateTime> existsFromDate, final Optional<LocalDateTime> existsUptoDate) {
+        boolean valid = true;
+        if (bulletin.validTo.isPresent() && existsFromDate.isPresent()) {
+            if (existsFromDate.get().isAfter(bulletin.validTo.get())) {
+                valid = false;
+            }
+        }
+        if (bulletin.validFrom.isPresent() && existsUptoDate.isPresent()) {
+            if (existsUptoDate.get().isBefore(bulletin.validFrom.get())) {
+                valid = false;
+            }
+        }
+        return valid;
+    }
+
     static List<InternalMessages.Bulletin.AffectedEntity> getAffectedStops(final Bulletin bulletin, final Map<Long, StopPoint> stops) {
         List<InternalMessages.Bulletin.AffectedEntity> affectedStops = new LinkedList<>();
         if (bulletin.affectedStopGids.size() > 0) {
             for (Long stopGid : bulletin.affectedStopGids) {
                 Optional<StopPoint> stop = Optional.ofNullable(stops.get(stopGid));
-                if (stop.isPresent()) {
+                if (stop.isPresent() && entityIsTimeValidForBulletin(bulletin, stop.get().existsFromDate, stop.get().existsUptoDate)) {
                     String stopId = stop.get().stopId;
                     InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
                             .setEntityId(stopId).build();
-                    affectedStops.add(entity);
+                    if (!affectedStops.contains(entity)) {
+                        affectedStops.add(entity);
+                    }
                 }
                 else {
-                    log.error("Failed to find stop ID for stop GID: {}", stopGid);
+                    log.warn("Failed to find valid stop ID for stop GID: {}", stopGid);
                 }
             }
             log.debug("Found {} entity selectors for routes (should have been {})", affectedStops.size(), bulletin.affectedStopGids.size());

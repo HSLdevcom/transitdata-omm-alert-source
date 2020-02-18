@@ -91,7 +91,7 @@ public class MockOmmConnector {
                             gid -> gid,
                             gid -> {
                                 Line line = new Line(gid);
-                                line.addRouteToLine(new Route(gid, lineGidToRouteId(gid)));
+                                line.addRouteToLine(new Route(gid, lineGidToRouteId(gid), "2019-01-18 13:01:35.270", "2019-12-18 13:01:35.270"));
                                 return line;
                             },
                             (oldId, newId) -> oldId) //Merge by just throwing away duplicates
@@ -116,7 +116,7 @@ public class MockOmmConnector {
                     .flatMap(bulletin -> bulletin.affectedStopGids.stream())
                     .collect(Collectors.toMap(
                             gid -> gid,
-                            gid -> new StopPoint(gid, stopGidtoStopPointId(gid)),
+                            gid -> new StopPoint(gid, stopGidtoStopPointId(gid), "2019-01-18 13:01:35.270", "2019-06-18 13:01:35.270"),
                             (oldId, newId) -> oldId) //Merge by just throwing away duplicates
                     );
         }
