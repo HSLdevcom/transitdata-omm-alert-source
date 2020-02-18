@@ -159,7 +159,7 @@ public class OmmAlertHandler {
                 if (line.isPresent()) {
                     List<Route> routes = line.get().routes;
                     routes = routes.stream()
-                            .filter(route -> routeIsTimeValidForBulletin(bulletin, route))
+                            .filter(route -> entityIsTimeValidForBulletin(bulletin, route.existsFromDate, route.existsUptoDate))
                             .collect(Collectors.toList());
                     routes.forEach((route) -> {
                         InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
@@ -178,15 +178,15 @@ public class OmmAlertHandler {
         return affectedRoutes;
     }
 
-    static boolean routeIsTimeValidForBulletin(final Bulletin bulletin, final Route route) {
+    static boolean entityIsTimeValidForBulletin(final Bulletin bulletin, final Optional<LocalDateTime> existsFromDate, final Optional<LocalDateTime> existsUptoDate) {
         boolean valid = true;
-        if (bulletin.validTo.isPresent() && route.existsFromDate.isPresent()) {
-            if (route.existsFromDate.get().isAfter(bulletin.validTo.get())) {
+        if (bulletin.validTo.isPresent() && existsFromDate.isPresent()) {
+            if (existsFromDate.get().isAfter(bulletin.validTo.get())) {
                 valid = false;
             }
         }
-        if (bulletin.validFrom.isPresent() && route.existsUptoDate.isPresent()) {
-            if (route.existsUptoDate.get().isBefore(bulletin.validFrom.get())) {
+        if (bulletin.validFrom.isPresent() && existsUptoDate.isPresent()) {
+            if (existsUptoDate.get().isBefore(bulletin.validFrom.get())) {
                 valid = false;
             }
         }
@@ -198,14 +198,16 @@ public class OmmAlertHandler {
         if (bulletin.affectedStopGids.size() > 0) {
             for (Long stopGid : bulletin.affectedStopGids) {
                 Optional<StopPoint> stop = Optional.ofNullable(stops.get(stopGid));
-                if (stop.isPresent()) {
+                if (stop.isPresent() && entityIsTimeValidForBulletin(bulletin, stop.get().existsFromDate, stop.get().existsUptoDate)) {
                     String stopId = stop.get().stopId;
                     InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
                             .setEntityId(stopId).build();
-                    affectedStops.add(entity);
+                    if (!affectedStops.contains(entity)) {
+                        affectedStops.add(entity);
+                    }
                 }
                 else {
-                    log.error("Failed to find stop ID for stop GID: {}", stopGid);
+                    log.error("Failed to find valid stop ID for stop GID: {}", stopGid);
                 }
             }
             log.debug("Found {} entity selectors for routes (should have been {})", affectedStops.size(), bulletin.affectedStopGids.size());

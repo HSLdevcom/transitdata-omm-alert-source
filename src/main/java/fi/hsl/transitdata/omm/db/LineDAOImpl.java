@@ -38,8 +38,8 @@ public class LineDAOImpl extends DAOImplBase implements LineDAO {
         while (resultSet.next()) {
             long lineGid = resultSet.getLong("Gid");
             String routeId = resultSet.getString("StringValue");
-            String existsUptoDate = resultSet.getString("ExistsUptoDate");
             String existsFromDate = resultSet.getString("ExistsFromDate");
+            String existsUptoDate = resultSet.getString("ExistsUptoDate");
             Route route = new Route(lineGid, routeId, existsFromDate, existsUptoDate);
             Line line;
             if (lines.containsKey(lineGid)) {

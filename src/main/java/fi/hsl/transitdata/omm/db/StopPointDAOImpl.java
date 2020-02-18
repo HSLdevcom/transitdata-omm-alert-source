@@ -1,7 +1,9 @@
 package fi.hsl.transitdata.omm.db;
 
+import fi.hsl.common.files.FileUtils;
 import fi.hsl.transitdata.omm.models.StopPoint;
 
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,8 +27,6 @@ public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
     @Override
     public Map<Long, StopPoint> getAllStopPoints() throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(queryString)) {
-            statement.setString(1, localDateAsString(timezone));
-
             ResultSet results = performQuery(statement);
             return parseStopPoints(results);
         }
@@ -39,24 +39,24 @@ public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
     private Map<Long, StopPoint> parseStopPoints(ResultSet resultSet) throws SQLException {
         Map<Long, StopPoint> stopPoints = new HashMap<>();
         while (resultSet.next()) {
-            StopPoint stopPoint = new StopPoint();
-            stopPoint.gid = resultSet.getLong("Gid");
-            stopPoint.stopId = resultSet.getString("Number");
-
-            stopPoints.put(stopPoint.gid, stopPoint);
+            long stopGid = resultSet.getLong("Gid");
+            String stopId = resultSet.getString("Number");
+            String existsFromDate = resultSet.getString("ExistsFromDate");
+            String existsUptoDate = resultSet.getString("ExistsUptoDate");
+            StopPoint stopPoint = new StopPoint(stopGid, stopId, existsFromDate, existsUptoDate);
+            stopPoints.put(stopGid, stopPoint);
         }
         return stopPoints;
     }
 
     private String createQuery() {
-        return "SELECT " +
-                "    SP.Gid," +
-                "    JPP.Number" +
-                "  FROM [ptDOI4_Community].[dbo].[StopPoint] AS SP" +
-                "  JOIN [ptDOI4_Community].[dbo].[JourneyPatternPoint] AS JPP ON JPP.Gid = SP.IsJourneyPatternPointGid" +
-                "  WHERE SP.ExistsUptoDate IS NULL OR SP.ExistsUptoDate >= ?" +
-                "  GROUP BY SP.Gid, JPP.Number" +
-                "  ORDER BY SP.Gid";
+        InputStream stream = getClass().getResourceAsStream("/stop_points_all.sql");
+        try {
+            return FileUtils.readFileFromStreamOrThrow(stream);
+        } catch (Exception e) {
+            log.error("Error in reading sql from file:", e);
+            return null;
+        }
     }
 
 }
