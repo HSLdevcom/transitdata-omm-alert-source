@@ -26,6 +26,7 @@ public class OmmDbConnector implements AutoCloseable {
         timezone = config.getString("omm.timezone");
         log.info("Using timezone " + timezone);
         queryAllModifiedAlerts = config.getBoolean("omm.queryAllModifiedAlerts");
+        log.info("Set queryAllModifiedAlerts to: {}", queryAllModifiedAlerts);
         this.pollIntervalInSeconds = pollIntervalInSeconds;
 
         connectionString = jdbcConnectionString;

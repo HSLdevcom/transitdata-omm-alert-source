@@ -135,7 +135,7 @@ public class OmmAlertHandler {
             List<InternalMessages.Bulletin.AffectedEntity> affectedRoutes = getAffectedRoutes(bulletin, lines);
             List<InternalMessages.Bulletin.AffectedEntity> affectedStops = getAffectedStops(bulletin, stopPoints);
             if (affectedRoutes.isEmpty() && affectedStops.isEmpty() && !bulletin.affectsAllRoutes && !bulletin.affectsAllStops) {
-                log.error("Failed to find any Affected Entities for bulletin Id {}. Discarding alert.", bulletin.id);
+                log.warn("Failed to find any Affected Entities for bulletin Id {}. Discarding alert.", bulletin.id);
                 maybeBulletin = Optional.empty();
             }
             else {
@@ -207,7 +207,7 @@ public class OmmAlertHandler {
                     }
                 }
                 else {
-                    log.error("Failed to find valid stop ID for stop GID: {}", stopGid);
+                    log.warn("Failed to find valid stop ID for stop GID: {}", stopGid);
                 }
             }
             log.debug("Found {} entity selectors for routes (should have been {})", affectedStops.size(), bulletin.affectedStopGids.size());
