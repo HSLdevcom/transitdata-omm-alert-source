@@ -53,7 +53,7 @@ public class DAOImplBase {
         return DateTimeFormatter.ofPattern("yyyy-MM-dd").format(instant.atZone(ZoneId.of(zoneId)));
     }
 
-    static LocalDateTime parseOmmLocalDateTime(String dt) {
+    public static LocalDateTime parseOmmLocalDateTime(String dt) {
         return LocalDateTime.parse(dt.replace(" ", "T")); // Make java.sql.Timestamp ISO compatible
     }
 

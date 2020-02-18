@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -32,6 +33,8 @@ public class OmmAlertHandler {
     String timeZone;
     private final Producer<byte[]> producer;
     private AlertState previousState = null;
+    private Map<Long, Line> lines = null;
+    private LocalDate linesUpdateDate = null;
 
     OmmDbConnector ommConnector;
 
@@ -53,10 +56,14 @@ public class OmmAlertHandler {
             List<Bulletin> bulletins = bulletinDAO.getActiveBulletins();
             AlertState latestState = new AlertState(bulletins);
 
+            if (linesUpdateDate != LocalDate.now()) {
+                lines = lineDAO.getAllLines();
+                linesUpdateDate = LocalDate.now();
+            }
+
             if (!latestState.equals(previousState)) {
                 log.info("Service Alerts changed, creating new FeedMessage.");
 
-                Map<Long, Line> lines = lineDAO.getAllLines();
                 Map<Long, StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
 
                 // We want to keep Pulsar internal timestamps as accurate as possible (ms) but GTFS-RT expects milliseconds
@@ -146,16 +153,20 @@ public class OmmAlertHandler {
 
     static List<InternalMessages.Bulletin.AffectedEntity> getAffectedRoutes(final Bulletin bulletin, final Map<Long, Line> lines) {
         List<InternalMessages.Bulletin.AffectedEntity> affectedRoutes = new LinkedList<>();
-        LocalDateTime timeNow = LocalDateTime.now();
         if (bulletin.affectedLineGids.size() > 0) {
             for (Long lineGid : bulletin.affectedLineGids) {
                 Optional<Line> line = Optional.ofNullable(lines.get(lineGid));
                 if (line.isPresent()) {
-                    ArrayList<Route> routes = line.get().routes;
+                    List<Route> routes = line.get().routes;
+                    routes = routes.stream()
+                            .filter(route -> routeIsTimeValidForBulletin(bulletin, route))
+                            .collect(Collectors.toList());
                     routes.forEach((route) -> {
                         InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
                                 .setEntityId(route.routeId).build();
-                        affectedRoutes.add(entity);
+                        if (!affectedRoutes.contains(entity)) {
+                            affectedRoutes.add(entity);
+                        }
                     });
                 }
                 else {
@@ -165,6 +176,21 @@ public class OmmAlertHandler {
             log.debug("Found {} entity selectors for routes (should have been {})", affectedRoutes.size(), bulletin.affectedLineGids.size());
         }
         return affectedRoutes;
+    }
+
+    static boolean routeIsTimeValidForBulletin(final Bulletin bulletin, final Route route) {
+        boolean valid = true;
+        if (bulletin.validTo.isPresent() && route.existsFromDate.isPresent()) {
+            if (route.existsFromDate.get().isAfter(bulletin.validTo.get())) {
+                valid = false;
+            }
+        }
+        if (bulletin.validFrom.isPresent() && route.existsUptoDate.isPresent()) {
+            if (route.existsUptoDate.get().isBefore(bulletin.validFrom.get())) {
+                valid = false;
+            }
+        }
+        return valid;
     }
 
     static List<InternalMessages.Bulletin.AffectedEntity> getAffectedStops(final Bulletin bulletin, final Map<Long, StopPoint> stops) {
