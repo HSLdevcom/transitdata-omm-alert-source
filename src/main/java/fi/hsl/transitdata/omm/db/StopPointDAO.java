@@ -7,5 +7,5 @@ import java.util.List;
 import java.util.Map;
 
 public interface StopPointDAO {
-    Map<Long, StopPoint> getAllStopPoints() throws SQLException;
+    Map<Long, List<StopPoint>> getAllStopPoints() throws SQLException;
 }

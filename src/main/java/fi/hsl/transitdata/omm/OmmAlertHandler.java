@@ -64,7 +64,7 @@ public class OmmAlertHandler {
             if (!latestState.equals(previousState)) {
                 log.info("Service Alerts changed, creating new FeedMessage.");
 
-                Map<Long, StopPoint> stopPoints = stopPointDAO.getAllStopPoints();
+                Map<Long, List<StopPoint>> stopPoints = stopPointDAO.getAllStopPoints();
 
                 // We want to keep Pulsar internal timestamps as accurate as possible (ms) but GTFS-RT expects milliseconds
                 final long currentTimestampUtcMs = toUtcEpochMs(LocalDateTime.now(), timeZone);
@@ -81,7 +81,7 @@ public class OmmAlertHandler {
         }
     }
 
-    static InternalMessages.ServiceAlert createServiceAlert(final List<Bulletin> bulletins, final Map<Long, Line> lines, final Map<Long, StopPoint> stopPoints, final String timeZone) {
+    static InternalMessages.ServiceAlert createServiceAlert(final List<Bulletin> bulletins, final Map<Long, Line> lines, final Map<Long, List<StopPoint>> stopPoints, final String timeZone) {
         final InternalMessages.ServiceAlert.Builder builder = InternalMessages.ServiceAlert.newBuilder();
         builder.setSchemaVersion(builder.getSchemaVersion());
         final List<InternalMessages.Bulletin> internalMessageBulletins = bulletins.stream()
@@ -98,7 +98,7 @@ public class OmmAlertHandler {
         return localTimestamp.atZone(zone).toInstant().toEpochMilli();
     }
 
-    static Optional<InternalMessages.Bulletin> createBulletin(final Bulletin bulletin, final Map<Long, Line> lines, final Map<Long, StopPoint> stopPoints, final String timezone) {
+    static Optional<InternalMessages.Bulletin> createBulletin(final Bulletin bulletin, final Map<Long, Line> lines, final Map<Long, List<StopPoint>> stopPoints, final String timezone) {
         Optional<InternalMessages.Bulletin> maybeBulletin;
         try {
             final InternalMessages.Bulletin.Builder builder = InternalMessages.Bulletin.newBuilder();
@@ -193,17 +193,21 @@ public class OmmAlertHandler {
         return valid;
     }
 
-    static List<InternalMessages.Bulletin.AffectedEntity> getAffectedStops(final Bulletin bulletin, final Map<Long, StopPoint> stops) {
+    static List<InternalMessages.Bulletin.AffectedEntity> getAffectedStops(final Bulletin bulletin, final Map<Long, List<StopPoint>> stopsMap) {
         List<InternalMessages.Bulletin.AffectedEntity> affectedStops = new LinkedList<>();
         if (bulletin.affectedStopGids.size() > 0) {
             for (Long stopGid : bulletin.affectedStopGids) {
-                Optional<StopPoint> stop = Optional.ofNullable(stops.get(stopGid));
-                if (stop.isPresent() && entityIsTimeValidForBulletin(bulletin, stop.get().existsFromDate, stop.get().existsUptoDate)) {
-                    String stopId = stop.get().stopId;
-                    InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
-                            .setEntityId(stopId).build();
-                    if (!affectedStops.contains(entity)) {
-                        affectedStops.add(entity);
+                Optional<List<StopPoint>> stops = Optional.ofNullable(stopsMap.get(stopGid));
+                if (stops.isPresent()) {
+                    for (StopPoint stopPoint : stops.get()) {
+                        if (entityIsTimeValidForBulletin(bulletin, stopPoint.existsFromDate, stopPoint.existsUptoDate)) {
+                            String stopId = stopPoint.stopId;
+                            InternalMessages.Bulletin.AffectedEntity entity = InternalMessages.Bulletin.AffectedEntity.newBuilder()
+                                    .setEntityId(stopId).build();
+                            if (!affectedStops.contains(entity)) {
+                                affectedStops.add(entity);
+                            }
+                        }
                     }
                 }
                 else {

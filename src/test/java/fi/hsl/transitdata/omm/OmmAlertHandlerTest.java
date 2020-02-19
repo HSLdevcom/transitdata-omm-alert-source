@@ -24,7 +24,7 @@ public class OmmAlertHandlerTest {
         MockOmmConnector connector = readDefaultMockData();
         List<Bulletin> bulletins = connector.getBulletinDAO().getActiveBulletins();
         Map<Long, Line> lines = connector.getLineDAO().getAllLines();
-        Map<Long, StopPoint> stops = connector.getStopPointDAO().getAllStopPoints();
+        Map<Long, List<StopPoint>> stops = connector.getStopPointDAO().getAllStopPoints();
 
         final InternalMessages.ServiceAlert alert = OmmAlertHandler.createServiceAlert(bulletins, lines, stops, TIMEZONE);
         assertEquals(bulletins.size(), alert.getBulletinsCount());
@@ -90,7 +90,7 @@ public class OmmAlertHandlerTest {
         final MockOmmConnector connector = readDefaultMockData();
         final List<Bulletin> bulletins = connector.getBulletinDAO().getActiveBulletins();
         final Map<Long, Line> lines = connector.getLineDAO().getAllLines();
-        final Map<Long, StopPoint> stops = connector.getStopPointDAO().getAllStopPoints();
+        final Map<Long, List<StopPoint>> stops = connector.getStopPointDAO().getAllStopPoints();
 
         final Optional<Bulletin> maybeSelectedBulletin = bulletins.stream().filter(b -> b.id == 6431).findFirst();
         assertTrue(maybeSelectedBulletin.isPresent());

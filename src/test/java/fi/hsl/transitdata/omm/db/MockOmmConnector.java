@@ -10,9 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.sql.SQLException;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class MockOmmConnector {
@@ -109,20 +107,22 @@ public class MockOmmConnector {
     }
 
     static class StopPointDAOMock implements StopPointDAO {
-        Map<Long, StopPoint> stops;
+        Map<Long, List<StopPoint>> stops = new HashMap<>();
 
         StopPointDAOMock(List<Bulletin> bulletins) {
-            stops = bulletins.stream()
-                    .flatMap(bulletin -> bulletin.affectedStopGids.stream())
-                    .collect(Collectors.toMap(
-                            gid -> gid,
-                            gid -> new StopPoint(gid, stopGidtoStopPointId(gid), "2019-01-18 13:01:35.270", "2019-06-18 13:01:35.270"),
-                            (oldId, newId) -> oldId) //Merge by just throwing away duplicates
-                    );
+            for (Bulletin bulletin : bulletins) {
+                for (long stopGid : bulletin.affectedStopGids) {
+                    if (!stops.containsKey(stopGid)) {
+                        List stopsList = new ArrayList<StopPoint>();
+                        stops.put(stopGid, stopsList);
+                    }
+                    stops.get(stopGid).add(new StopPoint(stopGid, stopGidtoStopPointId(stopGid), "2019-01-18 13:01:35.270", "2019-06-18 13:01:35.270"));
+                }
+            }
         }
 
         @Override
-        public Map<Long, StopPoint> getAllStopPoints() throws SQLException {
+        public Map<Long, List<StopPoint>> getAllStopPoints() throws SQLException {
             return stops;
         }
     }

@@ -8,10 +8,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
 
@@ -25,7 +22,7 @@ public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
     }
 
     @Override
-    public Map<Long, StopPoint> getAllStopPoints() throws SQLException {
+    public Map<Long, List<StopPoint>> getAllStopPoints() throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(queryString)) {
             ResultSet results = performQuery(statement);
             return parseStopPoints(results);
@@ -36,17 +33,21 @@ public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
         }
     }
 
-    private Map<Long, StopPoint> parseStopPoints(ResultSet resultSet) throws SQLException {
-        Map<Long, StopPoint> stopPoints = new HashMap<>();
+    private Map<Long, List<StopPoint>> parseStopPoints(ResultSet resultSet) throws SQLException {
+        Map<Long, List<StopPoint>> stopPointsMap = new HashMap<>();
         while (resultSet.next()) {
             long stopGid = resultSet.getLong("Gid");
             String stopId = resultSet.getString("Number");
             String existsFromDate = resultSet.getString("ExistsFromDate");
             String existsUptoDate = resultSet.getString("ExistsUptoDate");
             StopPoint stopPoint = new StopPoint(stopGid, stopId, existsFromDate, existsUptoDate);
-            stopPoints.put(stopGid, stopPoint);
+            // there may be multiple stopPoints with same gid
+            if (!stopPointsMap.containsKey(stopGid)) {
+                stopPointsMap.put(stopGid, new ArrayList<StopPoint>());
+            }
+            stopPointsMap.get(stopGid).add(stopPoint);
         }
-        return stopPoints;
+        return stopPointsMap;
     }
 
     private String createQuery() {
