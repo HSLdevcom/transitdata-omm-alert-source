@@ -56,7 +56,7 @@ public class OmmAlertHandler {
             List<Bulletin> bulletins = bulletinDAO.getActiveBulletins();
             AlertState latestState = new AlertState(bulletins);
 
-            if (linesUpdateDate != LocalDate.now()) {
+            if (!LocalDate.now().equals(linesUpdateDate)) {
                 lines = lineDAO.getAllLines();
                 linesUpdateDate = LocalDate.now();
             }
