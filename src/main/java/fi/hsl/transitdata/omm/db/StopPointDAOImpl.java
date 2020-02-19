@@ -1,15 +1,14 @@
 package fi.hsl.transitdata.omm.db;
 
+import fi.hsl.common.files.FileUtils;
 import fi.hsl.transitdata.omm.models.StopPoint;
 
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
 
@@ -23,10 +22,8 @@ public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
     }
 
     @Override
-    public Map<Long, StopPoint> getAllStopPoints() throws SQLException {
+    public Map<Long, List<StopPoint>> getAllStopPoints() throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(queryString)) {
-            statement.setString(1, localDateAsString(timezone));
-
             ResultSet results = performQuery(statement);
             return parseStopPoints(results);
         }
@@ -36,27 +33,31 @@ public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
         }
     }
 
-    private Map<Long, StopPoint> parseStopPoints(ResultSet resultSet) throws SQLException {
-        Map<Long, StopPoint> stopPoints = new HashMap<>();
+    private Map<Long, List<StopPoint>> parseStopPoints(ResultSet resultSet) throws SQLException {
+        Map<Long, List<StopPoint>> stopPointsMap = new HashMap<>();
         while (resultSet.next()) {
-            StopPoint stopPoint = new StopPoint();
-            stopPoint.gid = resultSet.getLong("Gid");
-            stopPoint.stopId = resultSet.getString("Number");
-
-            stopPoints.put(stopPoint.gid, stopPoint);
+            long stopGid = resultSet.getLong("Gid");
+            String stopId = resultSet.getString("Number");
+            String existsFromDate = resultSet.getString("ExistsFromDate");
+            String existsUptoDate = resultSet.getString("ExistsUptoDate");
+            StopPoint stopPoint = new StopPoint(stopGid, stopId, existsFromDate, existsUptoDate);
+            // there may be multiple stopPoints with same gid
+            if (!stopPointsMap.containsKey(stopGid)) {
+                stopPointsMap.put(stopGid, new ArrayList<StopPoint>());
+            }
+            stopPointsMap.get(stopGid).add(stopPoint);
         }
-        return stopPoints;
+        return stopPointsMap;
     }
 
     private String createQuery() {
-        return "SELECT " +
-                "    SP.Gid," +
-                "    JPP.Number" +
-                "  FROM [ptDOI4_Community].[dbo].[StopPoint] AS SP" +
-                "  JOIN [ptDOI4_Community].[dbo].[JourneyPatternPoint] AS JPP ON JPP.Gid = SP.IsJourneyPatternPointGid" +
-                "  WHERE SP.ExistsUptoDate IS NULL OR SP.ExistsUptoDate >= ?" +
-                "  GROUP BY SP.Gid, JPP.Number" +
-                "  ORDER BY SP.Gid";
+        InputStream stream = getClass().getResourceAsStream("/stop_points_all.sql");
+        try {
+            return FileUtils.readFileFromStreamOrThrow(stream);
+        } catch (Exception e) {
+            log.error("Error in reading sql from file:", e);
+            return null;
+        }
     }
 
 }

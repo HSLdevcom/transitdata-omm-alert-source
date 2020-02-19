@@ -12,6 +12,8 @@ public class OmmDbConnector implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(OmmDbConnector.class);
 
     private final String timezone;
+    private int pollIntervalInSeconds;
+    private boolean queryAllModifiedAlerts;
 
     private BulletinDAO bulletinDAO;
     private LineDAO lineDAO;
@@ -20,16 +22,19 @@ public class OmmDbConnector implements AutoCloseable {
     private Connection connection;
     private String connectionString;
 
-    public OmmDbConnector(Config config, String jdbcConnectionString) {
+    public OmmDbConnector(Config config, int pollIntervalInSeconds, String jdbcConnectionString) {
         timezone = config.getString("omm.timezone");
         log.info("Using timezone " + timezone);
+        queryAllModifiedAlerts = config.getBoolean("omm.queryAllModifiedAlerts");
+        log.info("Set queryAllModifiedAlerts to: {}", queryAllModifiedAlerts);
+        this.pollIntervalInSeconds = pollIntervalInSeconds;
 
         connectionString = jdbcConnectionString;
     }
 
     public void connect() throws SQLException {
         connection = DriverManager.getConnection(connectionString);
-        bulletinDAO = new BulletinDAOImpl(connection, timezone);
+        bulletinDAO = new BulletinDAOImpl(connection, timezone, pollIntervalInSeconds, queryAllModifiedAlerts);
         stopPointDAO = new StopPointDAOImpl(connection, timezone);
         lineDAO = new LineDAOImpl(connection);
     }

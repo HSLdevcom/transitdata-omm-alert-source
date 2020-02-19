@@ -14,11 +14,15 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
 
     String queryString;
     String timezone;
+    int pollIntervalInSeconds;
+    boolean queryAllModifiedAlerts;
 
-    public BulletinDAOImpl(Connection connection, String timezone) {
+    public BulletinDAOImpl(Connection connection, String timezone, int pollIntervalInSeconds, boolean queryAllModifiedAlerts) {
         super(connection);
         this.timezone = timezone;
-        queryString = createQuery();
+        this.pollIntervalInSeconds = pollIntervalInSeconds;
+        this.queryAllModifiedAlerts = queryAllModifiedAlerts;
+        queryString = createQuery(queryAllModifiedAlerts);
     }
 
     @Override
@@ -26,6 +30,10 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
         try (PreparedStatement statement = connection.prepareStatement(queryString)) {
             String now = localDatetimeAsString(timezone);
             statement.setString(1, now);
+            if (queryAllModifiedAlerts == true) {
+                String pastNow = pastLocalDatetimeAsString(timezone, pollIntervalInSeconds);
+                statement.setString(2, pastNow);
+            }
 
             ResultSet results = performQuery(statement);
             return parseBulletins(results);
@@ -113,7 +121,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
         }
     }
 
-    private String createQuery() {
+    private String createQuery(boolean queryAllModifiedAlerts) {
         return "SELECT B.bulletins_id" +
                 "    ,PBMD.impact" +
                 "    ,B.category" +
@@ -138,7 +146,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    LEFT JOIN [OMM_Community].[dbo].bulletin_localized_messages AS BLM ON BLM.bulletins_id = B.bulletins_id" +
                 "    LEFT JOIN [OMM_Community].[dbo].passenger_bulletin_meta_data AS PBMD ON PBMD.bulletins_id = B.bulletins_id" +
                 "  WHERE B.[type] = 'PASSENGER_INFORMATION' " +
-                "    AND B.valid_to > ?" +
+                "    AND B.valid_to > ?" + (queryAllModifiedAlerts == true ? " OR B.last_modified > ?" : "") +
                 "  GROUP BY B.bulletins_id" +
                 "    ,B.category" +
                 "    ,PBMD.impact" +

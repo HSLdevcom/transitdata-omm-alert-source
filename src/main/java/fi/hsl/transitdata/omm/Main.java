@@ -26,12 +26,13 @@ public class Main {
         try {
             final Config config = ConfigParser.createConfig();
             final String connectionString = readConnectionString();
+            final int pollIntervalInSeconds = config.getInt("omm.interval");
+            log.info("Starting omm alert source with poll interval (s): {}", pollIntervalInSeconds);
 
             final PulsarApplication app = PulsarApplication.newInstance(config);
-            final OmmDbConnector omm = new OmmDbConnector(config, connectionString);
+            final OmmDbConnector omm = new OmmDbConnector(config, pollIntervalInSeconds, connectionString);
             final OmmAlertHandler alerter = new OmmAlertHandler(app.getContext(), omm);
 
-            final int pollIntervalInSeconds = config.getInt("omm.interval");
             final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
             scheduler.scheduleAtFixedRate(() -> {
                 try {
