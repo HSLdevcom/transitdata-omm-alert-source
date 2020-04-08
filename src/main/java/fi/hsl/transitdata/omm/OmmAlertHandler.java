@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -67,7 +68,7 @@ public class OmmAlertHandler {
                 Map<Long, List<StopPoint>> stopPoints = stopPointDAO.getAllStopPoints();
 
                 // We want to keep Pulsar internal timestamps as accurate as possible (ms) but GTFS-RT expects milliseconds
-                final long currentTimestampUtcMs = toUtcEpochMs(LocalDateTime.now(), timeZone);
+                final long currentTimestampUtcMs = ZonedDateTime.now(ZoneId.of(timeZone)).toInstant().toEpochMilli();
 
                 final InternalMessages.ServiceAlert alert = createServiceAlert(bulletins, lines, stopPoints, timeZone);
                 sendPulsarMessage(alert, currentTimestampUtcMs);
