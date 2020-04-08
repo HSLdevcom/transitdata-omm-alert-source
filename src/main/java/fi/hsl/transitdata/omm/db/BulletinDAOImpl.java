@@ -91,7 +91,9 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
     }
 
     static List<InternalMessages.Bulletin.Translation> parseUrls(ResultSet resultSet) throws SQLException {
-        return parseText(resultSet,"url_");
+        return parseText(resultSet,"url_").stream()
+                .filter(translation -> translation.hasText() && !translation.getText().trim().isEmpty())
+                .collect(Collectors.toList());
     }
 
     private static List<InternalMessages.Bulletin.Translation> parseText(final ResultSet resultSet, final String columnPrefix) throws SQLException {
