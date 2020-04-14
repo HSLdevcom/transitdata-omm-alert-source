@@ -31,5 +31,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl
 #This container can access the build artifacts inside the BUILD container.
 #Everything that is not copied is discarded
 COPY --from=BUILD /usr/src/app/target/transitdata-omm-alert-source-jar-with-dependencies.jar /usr/app/transitdata-omm-alert-source.jar
-
-ENTRYPOINT ["java", "-jar", "/usr/app/transitdata-omm-alert-source.jar"]
+COPY start-application.sh /
+RUN chmod +x /start-application.sh
+CMD ["/start-application.sh"]
