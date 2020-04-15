@@ -14,33 +14,6 @@ import java.util.function.Function;
 import static org.junit.Assert.*;
 
 public class AlertStateTest {
-
-    List<Long> ids = Arrays.asList(1L, 2L, 3L);
-    List<Long> idsInReverse = Arrays.asList(3L, 2L, 1L);
-
-    @Test
-    public void testSorting() throws Exception {
-        List<Bulletin> ordered = BulletinDAOMock.newMockDAO(ids).getActiveBulletins();
-        List<Bulletin> reversed = BulletinDAOMock.newMockDAO(idsInReverse).getActiveBulletins();
-
-        assertNotEquals(ordered, reversed);
-        assertEquals(ordered, AlertState.asSorted(reversed));
-    }
-
-    @Test
-    public void testSortingReturnsNewList() throws Exception {
-        List<Bulletin> ordered = BulletinDAOMock.newMockDAO(ids).getActiveBulletins();
-        List<Bulletin> reversed = BulletinDAOMock.newMockDAO(idsInReverse).getActiveBulletins();
-
-        List<Bulletin> sortedReversed = AlertState.asSorted(reversed);
-        assertEquals(ordered, sortedReversed);
-
-        assertEquals(reversed.size(), sortedReversed.size());
-        reversed.remove(0);
-        assertEquals(reversed.size() + 1, sortedReversed.size());
-
-    }
-
     private List<Bulletin> readDefaultTestBulletins() throws Exception {
         MockOmmConnector connector = MockOmmConnector.newInstance("2019_05_alert_dump.tsv");
         return connector.getBulletinDAO().getActiveBulletins();
