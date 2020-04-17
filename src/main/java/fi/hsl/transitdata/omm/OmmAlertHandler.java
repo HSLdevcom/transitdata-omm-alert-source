@@ -18,10 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -31,18 +28,32 @@ public class OmmAlertHandler {
 
     static final Logger log = LoggerFactory.getLogger(OmmAlertHandler.class);
 
-    String timeZone;
     private final Producer<byte[]> producer;
+
+    private final String timeZone;
+    private final Duration resendTime;
+
     private AlertState previousState = null;
     private Map<Long, Line> lines = null;
     private LocalDate linesUpdateDate = null;
+
+    private long lastUpdateTime = System.nanoTime();
 
     OmmDbConnector ommConnector;
 
     public OmmAlertHandler(PulsarApplicationContext context, OmmDbConnector omm) {
         producer = context.getProducer();
         timeZone = context.getConfig().getString("omm.timezone");
+        resendTime = context.getConfig().getDuration("omm.resendTime");
         ommConnector = omm;
+    }
+
+    /**
+     * Returns amount of nanoseconds that have passed since the last update
+     * @return Time in nanoseconds
+     */
+    private long timeSinceLastUpdate() {
+        return System.nanoTime() - lastUpdateTime;
     }
 
     public void pollAndSend() throws SQLException, PulsarClientException, Exception {
@@ -62,7 +73,7 @@ public class OmmAlertHandler {
                 linesUpdateDate = LocalDate.now();
             }
 
-            if (!latestState.equals(previousState)) {
+            if (!latestState.equals(previousState) || timeSinceLastUpdate() > resendTime.toNanos()) {
                 log.info("Service Alerts changed, creating new FeedMessage.");
 
                 Map<Long, List<StopPoint>> stopPoints = stopPointDAO.getAllStopPoints();
@@ -226,6 +237,8 @@ public class OmmAlertHandler {
                     .eventTime(timestamp)
                     .property(TransitdataProperties.KEY_PROTOBUF_SCHEMA, TransitdataProperties.ProtobufSchema.TransitdataServiceAlert.toString())
                     .send();
+
+            lastUpdateTime = System.nanoTime();
 
             log.info("Produced a new alert of {} bulletins with timestamp {}", message.getBulletinsCount(), timestamp);
         }
