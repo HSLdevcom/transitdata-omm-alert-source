@@ -3,10 +3,7 @@ package fi.hsl.transitdata.omm.models;
 import fi.hsl.common.transitdata.proto.InternalMessages;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class Bulletin {
 
@@ -195,47 +192,29 @@ public class Bulletin {
             urls = new ArrayList<>(other.urls);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Bulletin bulletin = (Bulletin) o;
+        return id == bulletin.id &&
+                affectsAllRoutes == bulletin.affectsAllRoutes &&
+                affectsAllStops == bulletin.affectsAllStops &&
+                category == bulletin.category &&
+                impact == bulletin.impact &&
+                Objects.equals(lastModified, bulletin.lastModified) &&
+                Objects.equals(validFrom, bulletin.validFrom) &&
+                Objects.equals(validTo, bulletin.validTo) &&
+                Objects.equals(affectedLineGids, bulletin.affectedLineGids) &&
+                Objects.equals(affectedStopGids, bulletin.affectedStopGids) &&
+                priority == bulletin.priority &&
+                Objects.equals(titles, bulletin.titles) &&
+                Objects.equals(descriptions, bulletin.descriptions) &&
+                Objects.equals(urls, bulletin.urls);
+    }
 
     @Override
-    public boolean equals(Object other) {
-        if (other instanceof Bulletin) {
-            return equals((Bulletin) other);
-        }
-        return false;
+    public int hashCode() {
+        return Objects.hash(id, category, impact, lastModified, validFrom, validTo, affectsAllRoutes, affectsAllStops, affectedLineGids, affectedStopGids, priority, titles, descriptions, urls);
     }
-
-    public boolean equals(Bulletin other) {
-        if (other == this)
-            return true;
-
-        if (other == null)
-            return false;
-
-        boolean same = true;
-        same &= this.id == other.id;
-        same &= this.category == other.category;
-        same &= this.impact == other.impact;
-        same &= equalsWithNullCheck(this.lastModified, other.lastModified);
-        same &= equalsWithNullCheck(this.validFrom, other.validFrom);
-        same &= equalsWithNullCheck(this.validTo, other.validTo);
-        same &= this.affectsAllRoutes == other.affectsAllRoutes;
-        same &= this.affectsAllStops == other.affectsAllStops;
-        same &= equalsWithNullCheck(this.affectedLineGids, other.affectedLineGids);
-        same &= equalsWithNullCheck(this.affectedStopGids, other.affectedStopGids);
-        same &= this.priority == other.priority;
-        same &= equalsWithNullCheck(this.titles, other.titles);
-        same &= equalsWithNullCheck(this.descriptions, other.descriptions);
-        same &= equalsWithNullCheck(this.urls, other.urls);
-
-        return same;
-    }
-
-    static boolean equalsWithNullCheck(Object o1, Object o2) {
-        if (o1 == null && o2 == null)
-            return true;
-        if (o1 != null && o2 != null)
-            return o1.equals(o2);
-        return false;
-    }
-
 }
