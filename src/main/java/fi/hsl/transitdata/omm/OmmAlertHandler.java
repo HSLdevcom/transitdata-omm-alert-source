@@ -139,6 +139,7 @@ public class OmmAlertHandler {
             builder.setAffectsAllStops(bulletin.affectsAllStops);
             builder.setImpact(bulletin.impact.toImpact());
             builder.setPriority(bulletin.priority.toPriority());
+            builder.setDisplayOnly(bulletin.displayOnly);
 
             builder.addAllTitles(bulletin.titles);
             builder.addAllDescriptions(bulletin.descriptions);

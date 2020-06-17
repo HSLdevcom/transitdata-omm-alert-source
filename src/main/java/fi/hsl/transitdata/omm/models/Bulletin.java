@@ -167,6 +167,7 @@ public class Bulletin {
     public List<InternalMessages.Bulletin.Translation> titles;
     public List<InternalMessages.Bulletin.Translation> descriptions;
     public List<InternalMessages.Bulletin.Translation> urls;
+    public boolean displayOnly;
 
     public Bulletin() {}
 
@@ -190,6 +191,7 @@ public class Bulletin {
             descriptions = new ArrayList<>(other.descriptions);
         if (other.urls != null)
             urls = new ArrayList<>(other.urls);
+        displayOnly = other.displayOnly;
     }
 
     @Override
@@ -200,6 +202,7 @@ public class Bulletin {
         return id == bulletin.id &&
                 affectsAllRoutes == bulletin.affectsAllRoutes &&
                 affectsAllStops == bulletin.affectsAllStops &&
+                displayOnly == bulletin.displayOnly &&
                 category == bulletin.category &&
                 impact == bulletin.impact &&
                 Objects.equals(lastModified, bulletin.lastModified) &&
@@ -215,6 +218,6 @@ public class Bulletin {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, category, impact, lastModified, validFrom, validTo, affectsAllRoutes, affectsAllStops, affectedLineGids, affectedStopGids, priority, titles, descriptions, urls);
+        return Objects.hash(id, category, impact, lastModified, validFrom, validTo, affectsAllRoutes, affectsAllStops, affectedLineGids, affectedStopGids, priority, titles, descriptions, urls, displayOnly);
     }
 }
