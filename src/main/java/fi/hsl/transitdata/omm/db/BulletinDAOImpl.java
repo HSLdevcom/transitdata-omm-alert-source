@@ -30,7 +30,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
         try (PreparedStatement statement = connection.prepareStatement(queryString)) {
             String now = localDatetimeAsString(timezone);
             statement.setString(1, now);
-            if (queryAllModifiedAlerts == true) {
+            if (queryAllModifiedAlerts) {
                 String pastNow = pastLocalDatetimeAsString(timezone, pollIntervalInSeconds);
                 statement.setString(2, pastNow);
             }
@@ -64,6 +64,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 bulletin.titles = parseTitles(resultSet);
                 bulletin.descriptions = parseDescriptions(resultSet);
                 bulletin.urls = parseUrls(resultSet);
+                bulletin.displayOnly = resultSet.getInt("display_only") > 0;
 
                 final Integer priorityInt = resultSet.getInt("priority");
                 Optional<Bulletin.Priority> maybePriority = Bulletin.Priority.fromInt(priorityInt);
@@ -119,11 +120,11 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                     .map(subString -> Long.parseLong(subString.trim()))
                     .collect(Collectors.toList());
         } else {
-            return new LinkedList<>();
+            return Collections.emptyList();
         }
     }
 
-    private String createQuery(boolean queryAllModifiedAlerts) {
+    private static String createQuery(boolean queryAllModifiedAlerts) {
         return "SELECT B.bulletins_id" +
                 "    ,PBMD.impact" +
                 "    ,B.category" +
@@ -135,6 +136,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    ,B.affected_route_ids" +
                 "    ,B.affected_stop_ids" +
                 "    ,PBMD.priority" +
+                "    ,PBMD.display_only" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'fi' THEN BLM.title END) AS title_fi" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'sv' THEN BLM.title END) AS title_sv" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'en' THEN BLM.title END) AS title_en" +
@@ -148,7 +150,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    LEFT JOIN [OMM_Community].[dbo].bulletin_localized_messages AS BLM ON BLM.bulletins_id = B.bulletins_id" +
                 "    LEFT JOIN [OMM_Community].[dbo].passenger_bulletin_meta_data AS PBMD ON PBMD.bulletins_id = B.bulletins_id" +
                 "  WHERE B.[type] = 'PASSENGER_INFORMATION' " +
-                "    AND B.valid_to > ?" + (queryAllModifiedAlerts == true ? " OR B.last_modified > ?" : "") +
+                "    AND B.valid_to > ?" + (queryAllModifiedAlerts ? " OR B.last_modified > ?" : "") +
                 "  GROUP BY B.bulletins_id" +
                 "    ,B.category" +
                 "    ,PBMD.impact" +
@@ -159,6 +161,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    ,B.affects_all_stops" +
                 "    ,B.affected_route_ids" +
                 "    ,B.affected_stop_ids" +
-                "    ,PBMD.priority";
+                "    ,PBMD.priority" +
+                "    ,PBMD.display_only";
     }
 }
