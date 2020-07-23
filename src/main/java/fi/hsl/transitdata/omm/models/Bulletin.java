@@ -110,6 +110,7 @@ public class Bulletin {
                 case "DELAYED": return DELAYED;
                 case "DEVIATING_SCHEDULE": return DEVIATING_SCHEDULE;
                 case "DISRUPTION_ROUTE": return DISRUPTION_ROUTE;
+                case "IRREGULAR_DEPARTURES_MAX_15":
                 case "IRREGULAR_DEPARTURES": return IRREGULAR_DEPARTURES;
                 case "POSSIBLE_DEVIATIONS": return POSSIBLE_DEVIATIONS;
                 case "POSSIBLY_DELAYED": return POSSIBLY_DELAYED;
