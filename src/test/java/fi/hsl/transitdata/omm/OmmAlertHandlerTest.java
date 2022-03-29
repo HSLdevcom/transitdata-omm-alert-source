@@ -3,10 +3,12 @@ package fi.hsl.transitdata.omm;
 import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.omm.db.MockOmmConnector;
 import fi.hsl.transitdata.omm.models.Bulletin;
+import fi.hsl.transitdata.omm.models.DisruptionRoute;
 import fi.hsl.transitdata.omm.models.Line;
 import fi.hsl.transitdata.omm.models.StopPoint;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,8 +27,8 @@ public class OmmAlertHandlerTest {
         List<Bulletin> bulletins = connector.getBulletinDAO().getActiveBulletins();
         Map<Long, Line> lines = connector.getLineDAO().getAllLines();
         Map<Long, List<StopPoint>> stops = connector.getStopPointDAO().getAllStopPoints();
-
-        final InternalMessages.ServiceAlert alert = OmmAlertHandler.createServiceAlert(bulletins, lines, stops, TIMEZONE);
+        List<DisruptionRoute> disruptionRoutes = new ArrayList<DisruptionRoute>();
+        final InternalMessages.ServiceAlert alert = OmmAlertHandler.createServiceAlert(bulletins, lines, stops, disruptionRoutes, TIMEZONE);
         assertEquals(bulletins.size(), alert.getBulletinsCount());
         validateMockDataFirstEntity(alert.getBulletinsList().get(0));
         return alert;
@@ -95,8 +97,8 @@ public class OmmAlertHandlerTest {
         final Optional<Bulletin> maybeSelectedBulletin = bulletins.stream().filter(b -> b.id == 6431).findFirst();
         assertTrue(maybeSelectedBulletin.isPresent());
         final Bulletin selectedBulletin = maybeSelectedBulletin.get();
-
-        final Optional<InternalMessages.Bulletin> maybeBulletin = OmmAlertHandler.createBulletin(selectedBulletin, lines, stops, TIMEZONE);
+        List<DisruptionRoute> disruptionRoutes = new ArrayList<DisruptionRoute>();
+        final Optional<InternalMessages.Bulletin> maybeBulletin = OmmAlertHandler.createBulletin(selectedBulletin, lines, stops, disruptionRoutes, TIMEZONE);
         assertTrue(maybeBulletin.isPresent());
         final InternalMessages.Bulletin bulletin = maybeBulletin.get();
 

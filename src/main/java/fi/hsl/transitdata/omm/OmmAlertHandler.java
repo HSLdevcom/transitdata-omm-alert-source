@@ -4,11 +4,13 @@ import fi.hsl.common.pulsar.PulsarApplicationContext;
 import fi.hsl.common.transitdata.TransitdataProperties;
 import fi.hsl.common.transitdata.proto.InternalMessages;
 import fi.hsl.transitdata.omm.db.BulletinDAO;
+import fi.hsl.transitdata.omm.db.DisruptionDAO;
 import fi.hsl.transitdata.omm.db.LineDAO;
 import fi.hsl.transitdata.omm.db.OmmDbConnector;
 import fi.hsl.transitdata.omm.db.StopPointDAO;
 import fi.hsl.transitdata.omm.models.AlertState;
 import fi.hsl.transitdata.omm.models.Bulletin;
+import fi.hsl.transitdata.omm.models.DisruptionRoute;
 import fi.hsl.transitdata.omm.models.Line;
 import fi.hsl.transitdata.omm.models.Route;
 import fi.hsl.transitdata.omm.models.StopPoint;
@@ -61,13 +63,16 @@ public class OmmAlertHandler {
             //For some reason the connection seem to be flaky, let's reconnect on each request.
             ommConnector.connect();
 
+            DisruptionDAO disruptionDAO = ommConnector.getDisruptionDAO();
+            List<DisruptionRoute> disruptionRoutes = disruptionDAO.getActiveDisruptions();
+
             BulletinDAO bulletinDAO = ommConnector.getBulletinDAO();
             LineDAO lineDAO = ommConnector.getLineDAO();
             StopPointDAO stopPointDAO = ommConnector.getStopPointDAO();
 
             List<Bulletin> bulletins = bulletinDAO.getActiveBulletins();
             AlertState latestState = new AlertState(bulletins);
-
+            
             if (!LocalDate.now().equals(linesUpdateDate)) {
                 lines = lineDAO.getAllLines();
                 linesUpdateDate = LocalDate.now();
@@ -81,7 +86,7 @@ public class OmmAlertHandler {
                 // We want to keep Pulsar internal timestamps as accurate as possible (ms) but GTFS-RT expects milliseconds
                 final long currentTimestampUtcMs = ZonedDateTime.now(ZoneId.of(timeZone)).toInstant().toEpochMilli();
 
-                final InternalMessages.ServiceAlert alert = createServiceAlert(bulletins, lines, stopPoints, timeZone);
+                final InternalMessages.ServiceAlert alert = createServiceAlert(bulletins, lines, stopPoints, disruptionRoutes, timeZone);
                 sendPulsarMessage(alert, currentTimestampUtcMs);
             } else {
                 log.info("No changes to current Service Alerts.");
@@ -93,11 +98,11 @@ public class OmmAlertHandler {
         }
     }
 
-    static InternalMessages.ServiceAlert createServiceAlert(final List<Bulletin> bulletins, final Map<Long, Line> lines, final Map<Long, List<StopPoint>> stopPoints, final String timeZone) {
+    static InternalMessages.ServiceAlert createServiceAlert(final List<Bulletin> bulletins, final Map<Long, Line> lines, final Map<Long, List<StopPoint>> stopPoints, List<DisruptionRoute> disruptionRoutes, final String timeZone) {
         final InternalMessages.ServiceAlert.Builder builder = InternalMessages.ServiceAlert.newBuilder();
         builder.setSchemaVersion(builder.getSchemaVersion());
         final List<InternalMessages.Bulletin> internalMessageBulletins = bulletins.stream()
-                .map(bulletin -> createBulletin(bulletin, lines, stopPoints, timeZone))
+                .map(bulletin -> createBulletin(bulletin, lines, stopPoints, disruptionRoutes, timeZone))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
@@ -110,7 +115,7 @@ public class OmmAlertHandler {
         return localTimestamp.atZone(zone).toInstant().toEpochMilli();
     }
 
-    static Optional<InternalMessages.Bulletin> createBulletin(final Bulletin bulletin, final Map<Long, Line> lines, final Map<Long, List<StopPoint>> stopPoints, final String timezone) {
+        static Optional<InternalMessages.Bulletin> createBulletin(final Bulletin bulletin, final Map<Long, Line> lines, final Map<Long, List<StopPoint>> stopPoints, List<DisruptionRoute> disruptionRoutes, final String timezone) {
         Optional<InternalMessages.Bulletin> maybeBulletin;
         try {
             final InternalMessages.Bulletin.Builder builder = InternalMessages.Bulletin.newBuilder();

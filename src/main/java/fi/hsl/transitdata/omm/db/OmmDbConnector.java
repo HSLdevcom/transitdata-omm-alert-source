@@ -16,6 +16,7 @@ public class OmmDbConnector implements AutoCloseable {
     private boolean queryAllModifiedAlerts;
 
     private BulletinDAO bulletinDAO;
+    private DisruptionDAO disruptionDAO;
     private LineDAO lineDAO;
     private StopPointDAO stopPointDAO;
 
@@ -35,6 +36,7 @@ public class OmmDbConnector implements AutoCloseable {
     public void connect() throws SQLException {
         connection = DriverManager.getConnection(connectionString);
         bulletinDAO = new BulletinDAOImpl(connection, timezone, pollIntervalInSeconds, queryAllModifiedAlerts);
+        disruptionDAO = new DisruptionDAOImpl(connection, timezone);
         stopPointDAO = new StopPointDAOImpl(connection, timezone);
         lineDAO = new LineDAOImpl(connection);
     }
@@ -42,6 +44,7 @@ public class OmmDbConnector implements AutoCloseable {
     @Override
     public void close() throws Exception {
         bulletinDAO = null;
+        disruptionDAO = null;
         stopPointDAO = null;
         lineDAO = null;
         connection.close();
@@ -50,6 +53,11 @@ public class OmmDbConnector implements AutoCloseable {
 
     public BulletinDAO getBulletinDAO() {
         return bulletinDAO;
+    }
+
+
+    public DisruptionDAO getDisruptionDAO() {
+        return disruptionDAO;
     }
 
     public LineDAO getLineDAO() {
