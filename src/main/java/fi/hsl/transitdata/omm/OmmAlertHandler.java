@@ -149,7 +149,7 @@ public class OmmAlertHandler {
             builder.addAllTitles(bulletin.titles);
             builder.addAllDescriptions(bulletin.descriptions);
             builder.addAllUrls(bulletin.urls);
-
+            builder.addAllAffectedDisruptionRoutes(disruptionRoutes);
             List<InternalMessages.Bulletin.AffectedEntity> affectedRoutes = getAffectedRoutes(bulletin, lines);
             List<InternalMessages.Bulletin.AffectedEntity> affectedStops = getAffectedStops(bulletin, stopPoints);
             if (affectedRoutes.isEmpty() && affectedStops.isEmpty() && !bulletin.affectsAllRoutes && !bulletin.affectsAllStops) {
