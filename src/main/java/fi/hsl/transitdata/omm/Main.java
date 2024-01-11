@@ -28,9 +28,10 @@ public class Main {
             final String connectionString = readConnectionString();
             final int pollIntervalInSeconds = config.getInt("omm.interval");
             log.info("Starting omm alert source with poll interval (s): {}", pollIntervalInSeconds);
+            final String databaseSchema = config.getString("omm.databaseSchema");
 
             final PulsarApplication app = PulsarApplication.newInstance(config);
-            final OmmDbConnector omm = new OmmDbConnector(config, pollIntervalInSeconds, connectionString);
+            final OmmDbConnector omm = new OmmDbConnector(config, pollIntervalInSeconds, connectionString, databaseSchema);
             final OmmAlertHandler alerter = new OmmAlertHandler(app.getContext(), omm);
 
             final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
