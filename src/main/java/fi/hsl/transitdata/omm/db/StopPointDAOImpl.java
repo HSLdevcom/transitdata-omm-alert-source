@@ -14,11 +14,14 @@ public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
 
     String queryString;
     String timezone;
+    
+    boolean pubtransDev;
 
-    public StopPointDAOImpl(Connection connection, String timezone) {
+    public StopPointDAOImpl(Connection connection, String timezone, boolean pubtransDev) {
         super(connection);
         queryString = createQuery();
         this.timezone = timezone;
+        this.pubtransDev = pubtransDev;
     }
 
     @Override
@@ -51,7 +54,8 @@ public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
     }
 
     private String createQuery() {
-        InputStream stream = getClass().getResourceAsStream("/stop_points_all.sql");
+        String sqlFile = pubtransDev ? "/stop_points_all_dev.sql" : "/stop_points_all.sql";
+        InputStream stream = getClass().getResourceAsStream(sqlFile);
         try {
             return FileUtils.readFileFromStreamOrThrow(stream);
         } catch (Exception e) {

@@ -15,10 +15,12 @@ import java.util.Map;
 public class LineDAOImpl extends DAOImplBase implements LineDAO {
 
     String queryString;
+    boolean pubtransDev;
 
-    public LineDAOImpl(Connection connection) {
+    public LineDAOImpl(Connection connection, boolean pubtransDev) {
         super(connection);
         queryString = createQuery();
+        pubtransDev = pubtransDev;
     }
 
     @Override
@@ -55,7 +57,8 @@ public class LineDAOImpl extends DAOImplBase implements LineDAO {
     }
 
     private String createQuery() {
-        InputStream stream = getClass().getResourceAsStream("/routes_all.sql");
+        String sqlFile = pubtransDev ? "/routes_all_dev.sql" : "/routes_all.sql";
+        InputStream stream = getClass().getResourceAsStream(sqlFile);
         try {
             return FileUtils.readFileFromStreamOrThrow(stream);
         } catch (Exception e) {
