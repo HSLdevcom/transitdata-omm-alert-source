@@ -61,7 +61,8 @@ public class LineDAOImpl extends DAOImplBase implements LineDAO {
     }
 
     private String createQuery() {
-        String sqlFile = pubtransDev ? "/routes_all_dev.sql" : "/routes_all.sql";
+        //String sqlFile = pubtransDev ? "/routes_all_dev.sql" : "/routes_all.sql";
+        String sqlFile = "/routes_all_dev.sql";
         log.info("Using SQL file '{}'", sqlFile);
         InputStream stream = getClass().getResourceAsStream(sqlFile);
         try {

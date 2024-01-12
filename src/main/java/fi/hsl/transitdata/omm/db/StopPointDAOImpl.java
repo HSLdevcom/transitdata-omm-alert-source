@@ -58,7 +58,8 @@ public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
     }
 
     private String createQuery() {
-        String sqlFile = pubtransDev ? "/stop_points_all_dev.sql" : "/stop_points_all.sql";
+        //String sqlFile = pubtransDev ? "/stop_points_all_dev.sql" : "/stop_points_all.sql";
+        String sqlFile = "/stop_points_all_dev.sql";
         log.info("Using SQL file '{}'", sqlFile);
         InputStream stream = getClass().getResourceAsStream(sqlFile);
         try {
