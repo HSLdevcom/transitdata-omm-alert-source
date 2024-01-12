@@ -24,7 +24,7 @@ public class LineDAOImpl extends DAOImplBase implements LineDAO {
     public LineDAOImpl(Connection connection, boolean pubtransDev) {
         super(connection);
         queryString = createQuery();
-        pubtransDev = pubtransDev;
+        this.pubtransDev = pubtransDev;
     }
 
     @Override
