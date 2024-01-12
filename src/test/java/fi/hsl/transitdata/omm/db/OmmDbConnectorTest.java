@@ -47,8 +47,9 @@ public class OmmDbConnectorTest {
         Config config = mock(Config.class);
         when(config.getString("omm.timezone")).thenReturn("UTC");
         when(config.getBoolean("omm.queryAllModifiedAlerts")).thenReturn(false);
+        when(config.getString("omm.databaseSchema")).thenReturn("omm_db");
 
-        OmmDbConnector ommDbConnector = new OmmDbConnector(config, 10, connString);
+        OmmDbConnector ommDbConnector = new OmmDbConnector(config, 10, connString, "omm_db");
         ommDbConnector.connect();
         int stopCount = ommDbConnector.getStopPointDAO().getAllStopPoints().size();
 

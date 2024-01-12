@@ -17,12 +17,13 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
     int pollIntervalInSeconds;
     boolean queryAllModifiedAlerts;
 
-    public BulletinDAOImpl(Connection connection, String timezone, int pollIntervalInSeconds, boolean queryAllModifiedAlerts) {
+    public BulletinDAOImpl(Connection connection, String timezone, int pollIntervalInSeconds,
+                           boolean queryAllModifiedAlerts, String databaseSchema) {
         super(connection);
         this.timezone = timezone;
         this.pollIntervalInSeconds = pollIntervalInSeconds;
         this.queryAllModifiedAlerts = queryAllModifiedAlerts;
-        queryString = createQuery(queryAllModifiedAlerts);
+        queryString = createQuery(queryAllModifiedAlerts, databaseSchema);
     }
 
     @Override
@@ -124,7 +125,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
         }
     }
 
-    private static String createQuery(boolean queryAllModifiedAlerts) {
+    private static String createQuery(boolean queryAllModifiedAlerts, String databaseSchema) {
         return "SELECT B.bulletins_id" +
                 "    ,PBMD.impact" +
                 "    ,B.category" +
@@ -146,9 +147,9 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                 "    ,MAX(CASE WHEN BLM.language_code = 'fi' THEN BLM.url END) AS url_fi" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'sv' THEN BLM.url END) AS url_sv" +
                 "    ,MAX(CASE WHEN BLM.language_code = 'en' THEN BLM.url END) AS url_en" +
-                "  FROM [OMM_Community].[dbo].[bulletins] AS B" +
-                "    LEFT JOIN [OMM_Community].[dbo].bulletin_localized_messages AS BLM ON BLM.bulletins_id = B.bulletins_id" +
-                "    LEFT JOIN [OMM_Community].[dbo].passenger_bulletin_meta_data AS PBMD ON PBMD.bulletins_id = B.bulletins_id" +
+                "  FROM [" + databaseSchema + "].[dbo].[bulletins] AS B" +
+                "    LEFT JOIN [" + databaseSchema + "].[dbo].bulletin_localized_messages AS BLM ON BLM.bulletins_id = B.bulletins_id" +
+                "    LEFT JOIN [" + databaseSchema + "].[dbo].passenger_bulletin_meta_data AS PBMD ON PBMD.bulletins_id = B.bulletins_id" +
                 "  WHERE B.[type] = 'PASSENGER_INFORMATION' " +
                 "    AND B.valid_to > ?" + (queryAllModifiedAlerts ? " OR B.last_modified > ?" : "") +
                 "  GROUP BY B.bulletins_id" +
