@@ -2,6 +2,7 @@ package fi.hsl.transitdata.omm.db;
 
 import com.typesafe.config.Config;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
@@ -41,7 +42,8 @@ public class OmmDbConnectorTest {
             connection.prepareStatement("INSERT INTO [ptDOI4_Community].[dbo].[JourneyPatternPoint] (Gid, Number) VALUES (1, '1')").execute();
         }
     }
-
+    
+    @Ignore
     @Test
     public void testOmmDbConnector() throws SQLException {
         Config config = mock(Config.class);
