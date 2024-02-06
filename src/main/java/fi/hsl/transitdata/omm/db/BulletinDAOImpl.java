@@ -34,7 +34,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
             String now = localDatetimeAsString(timezone);
             statement.setString(1, now);
             if (queryAllModifiedAlerts) {
-                String pastNow = pastLocalDatetimeAsString(timezone, pollIntervalInSeconds - fiveMinutesInSeconds);
+                String pastNow = pastLocalDatetimeAsString(timezone, pollIntervalInSeconds + fiveMinutesInSeconds);
                 statement.setString(2, pastNow);
             }
 
