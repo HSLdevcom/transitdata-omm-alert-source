@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 
 public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
 
+    private static final int fiveMinutesInSeconds = 60 * 5; //Added to give query some tolerance to work with.
+
     String queryString;
     String timezone;
     int pollIntervalInSeconds;
@@ -32,7 +34,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
             String now = localDatetimeAsString(timezone);
             statement.setString(1, now);
             if (queryAllModifiedAlerts) {
-                String pastNow = pastLocalDatetimeAsString(timezone, pollIntervalInSeconds);
+                String pastNow = pastLocalDatetimeAsString(timezone, pollIntervalInSeconds - fiveMinutesInSeconds);
                 statement.setString(2, pastNow);
             }
 
