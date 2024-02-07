@@ -23,8 +23,8 @@ public class LineDAOImpl extends DAOImplBase implements LineDAO {
 
     public LineDAOImpl(Connection connection, boolean pubtransDev) {
         super(connection);
-        queryString = createQuery();
         this.pubtransDev = pubtransDev;
+        queryString = createQuery();
     }
 
     @Override
@@ -61,8 +61,7 @@ public class LineDAOImpl extends DAOImplBase implements LineDAO {
     }
 
     private String createQuery() {
-        //String sqlFile = pubtransDev ? "/routes_all_dev.sql" : "/routes_all.sql";
-        String sqlFile = "/routes_all_dev.sql";
+        String sqlFile = pubtransDev ? "/routes_all_dev.sql" : "/routes_all.sql";
         log.info("Using SQL file '{}'", sqlFile);
         InputStream stream = getClass().getResourceAsStream(sqlFile);
         try {

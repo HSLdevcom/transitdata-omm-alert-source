@@ -43,17 +43,16 @@ public class OmmDbConnectorTest {
         }
     }
     
-    @Ignore
     @Test
     public void testOmmDbConnector() throws SQLException {
         Config config = mock(Config.class);
         when(config.getString("omm.timezone")).thenReturn("UTC");
         when(config.getBoolean("omm.queryAllModifiedAlerts")).thenReturn(false);
-        when(config.getString("omm.databaseSchema")).thenReturn("omm_db");
-        when(config.getBoolean("pubtrans.devDatabase")).thenReturn(true);
+        when(config.getString("omm.databaseSchema")).thenReturn("OMM_Community");
+        when(config.getBoolean("pubtrans.devDatabase")).thenReturn(false);
 
         OmmDbConnector ommDbConnector = new OmmDbConnector(
-                config, 10, connString, "omm_db", true);
+                config, 10, connString, "OMM_Community", false);
         ommDbConnector.connect();
         int stopCount = ommDbConnector.getStopPointDAO().getAllStopPoints().size();
 
