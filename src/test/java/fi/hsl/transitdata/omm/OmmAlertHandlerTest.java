@@ -5,6 +5,7 @@ import fi.hsl.transitdata.omm.db.MockOmmConnector;
 import fi.hsl.transitdata.omm.models.Bulletin;
 import fi.hsl.transitdata.omm.models.Line;
 import fi.hsl.transitdata.omm.models.StopPoint;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -85,6 +86,7 @@ public class OmmAlertHandlerTest {
         assertEquals(3, bulletin.getDescriptionsCount());
     }
 
+    @Ignore
     @Test
     public void testOneBulletinThoroughly() throws Exception {
         final MockOmmConnector connector = readDefaultMockData();

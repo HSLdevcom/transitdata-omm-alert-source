@@ -2,6 +2,8 @@ package fi.hsl.transitdata.omm.db;
 
 import fi.hsl.common.files.FileUtils;
 import fi.hsl.transitdata.omm.models.StopPoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.sql.Connection;
@@ -11,12 +13,17 @@ import java.sql.SQLException;
 import java.util.*;
 
 public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
+    
+    private static final Logger log = LoggerFactory.getLogger(StopPointDAOImpl.class);
 
     String queryString;
     String timezone;
+    
+    boolean pubtransDev;
 
-    public StopPointDAOImpl(Connection connection, String timezone) {
+    public StopPointDAOImpl(Connection connection, String timezone, boolean pubtransDev) {
         super(connection);
+        this.pubtransDev = pubtransDev;
         queryString = createQuery();
         this.timezone = timezone;
     }
@@ -51,7 +58,9 @@ public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
     }
 
     private String createQuery() {
-        InputStream stream = getClass().getResourceAsStream("/stop_points_all.sql");
+        String sqlFile = pubtransDev ? "/stop_points_all_dev.sql" : "/stop_points_all.sql";
+        log.info("Using SQL file '{}'", sqlFile);
+        InputStream stream = getClass().getResourceAsStream(sqlFile);
         try {
             return FileUtils.readFileFromStreamOrThrow(stream);
         } catch (Exception e) {

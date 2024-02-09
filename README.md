@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source.svg?branch=master)](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source) master  
-[![Build Status](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source.svg?branch=develop)](https://travis-ci.org/HSLdevcom/transitdata-omm-alert-source) develop
+[![Test and create Docker image](https://github.com/HSLdevcom/transitdata-omm-alert-source/actions/workflows/test-and-build.yml/badge.svg)](https://github.com/HSLdevcom/transitdata-omm-alert-source/actions/workflows/test-and-build.yml) master  
+[![Test and create Docker image](https://github.com/HSLdevcom/transitdata-omm-alert-source/actions/workflows/test-and-build.yml/badge.svg?branch=develop)](https://github.com/HSLdevcom/transitdata-omm-alert-source/actions/workflows/test-and-build.yml) develop
 
 # Transitdata-omm-alert-source
 
