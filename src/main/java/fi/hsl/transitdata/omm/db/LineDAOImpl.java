@@ -3,6 +3,8 @@ package fi.hsl.transitdata.omm.db;
 import fi.hsl.transitdata.omm.models.Line;
 import fi.hsl.transitdata.omm.models.Route;
 import fi.hsl.common.files.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.sql.Connection;
@@ -13,11 +15,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class LineDAOImpl extends DAOImplBase implements LineDAO {
+    
+    private static final Logger log = LoggerFactory.getLogger(LineDAOImpl.class);
 
     String queryString;
+    boolean pubtransDev;
 
-    public LineDAOImpl(Connection connection) {
+    public LineDAOImpl(Connection connection, boolean pubtransDev) {
         super(connection);
+        this.pubtransDev = pubtransDev;
         queryString = createQuery();
     }
 
@@ -55,7 +61,9 @@ public class LineDAOImpl extends DAOImplBase implements LineDAO {
     }
 
     private String createQuery() {
-        InputStream stream = getClass().getResourceAsStream("/routes_all.sql");
+        String sqlFile = pubtransDev ? "/routes_all_dev.sql" : "/routes_all.sql";
+        log.info("Using SQL file '{}'", sqlFile);
+        InputStream stream = getClass().getResourceAsStream(sqlFile);
         try {
             return FileUtils.readFileFromStreamOrThrow(stream);
         } catch (Exception e) {

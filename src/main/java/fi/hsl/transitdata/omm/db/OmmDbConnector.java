@@ -1,7 +1,6 @@
 package fi.hsl.transitdata.omm.db;
 
 import com.typesafe.config.Config;
-import fi.hsl.common.pulsar.PulsarApplicationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,8 +20,10 @@ public class OmmDbConnector implements AutoCloseable {
 
     private Connection connection;
     private String connectionString;
+    private String databaseSchema;
+    private boolean pubtransDev;
 
-    public OmmDbConnector(Config config, int pollIntervalInSeconds, String jdbcConnectionString) {
+    public OmmDbConnector(Config config, int pollIntervalInSeconds, String jdbcConnectionString, String databaseSchema, boolean pubtransDev) {
         timezone = config.getString("omm.timezone");
         log.info("Using timezone " + timezone);
         queryAllModifiedAlerts = config.getBoolean("omm.queryAllModifiedAlerts");
@@ -30,13 +31,16 @@ public class OmmDbConnector implements AutoCloseable {
         this.pollIntervalInSeconds = pollIntervalInSeconds;
 
         connectionString = jdbcConnectionString;
+        this.databaseSchema = databaseSchema;
+        this.pubtransDev = pubtransDev;
     }
 
     public void connect() throws SQLException {
         connection = DriverManager.getConnection(connectionString);
-        bulletinDAO = new BulletinDAOImpl(connection, timezone, pollIntervalInSeconds, queryAllModifiedAlerts);
-        stopPointDAO = new StopPointDAOImpl(connection, timezone);
-        lineDAO = new LineDAOImpl(connection);
+        bulletinDAO = new BulletinDAOImpl(
+                connection, timezone, pollIntervalInSeconds, queryAllModifiedAlerts, databaseSchema);
+        stopPointDAO = new StopPointDAOImpl(connection, timezone, pubtransDev);
+        lineDAO = new LineDAOImpl(connection, pubtransDev);
     }
 
     @Override
