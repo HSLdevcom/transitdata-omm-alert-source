@@ -33,6 +33,9 @@ public class OmmDbConnector implements AutoCloseable {
         connectionString = jdbcConnectionString;
         this.databaseSchema = databaseSchema;
         this.pubtransDev = pubtransDev;
+        log.info(pubtransDev);
+        log.info(databaseSchema);
+        log.info(jdbcConnectionString);
     }
 
     public void connect() throws SQLException {
