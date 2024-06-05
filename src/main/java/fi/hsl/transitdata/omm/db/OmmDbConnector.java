@@ -33,13 +33,13 @@ public class OmmDbConnector implements AutoCloseable {
         connectionString = jdbcConnectionString;
         this.databaseSchema = databaseSchema;
         this.pubtransDev = pubtransDev;
-        log.info("pubtransDev: "+ pubtransDev);
-        log.info("databaseSchema: " + databaseSchema);
-        log.info("jdbcConnectionString: " + jdbcConnectionString);
     }
 
     public void connect() throws SQLException {
         connection = DriverManager.getConnection(connectionString);
+        log.info("pubtransDev: "+ pubtransDev);
+        log.info("schema: " + databaseSchema);
+        log.info("jdbcConnectionString: " + connectionString);
         bulletinDAO = new BulletinDAOImpl(
                 connection, timezone, pollIntervalInSeconds, queryAllModifiedAlerts, databaseSchema);
         stopPointDAO = new StopPointDAOImpl(connection, timezone, pubtransDev);
