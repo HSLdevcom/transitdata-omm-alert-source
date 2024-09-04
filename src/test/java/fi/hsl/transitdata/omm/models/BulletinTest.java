@@ -13,7 +13,7 @@ public class BulletinTest {
     @Test
     public void testCategoryToEnum() {
         List<Bulletin.Category> all = Arrays.asList(Bulletin.Category.values());
-        assertEquals(32, all.size());
+        assertEquals(33, all.size());
         for (Bulletin.Category c: all) {
             assertNotNull(c.toCategory());
         }
