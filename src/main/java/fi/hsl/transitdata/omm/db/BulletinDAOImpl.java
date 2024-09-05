@@ -76,7 +76,7 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
                     bulletins.add(bulletin);
                 } else {
                     // Do not handle bulletin if priority cannot be parsed
-                    log.warn("Failed to parse priority {}", priorityInt);
+                    log.warn("Failed to parse priority {}. Bulletin: {}", priorityInt, bulletinToString(bulletin));
                 }
             }
             catch (IllegalArgumentException iae) {
@@ -84,6 +84,30 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
             }
         }
         return bulletins;
+    }
+    
+    private static String bulletinToString(Bulletin bulletin) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("ID=" + bulletin.id);
+        stringBuilder.append(", CATEGORY=" + bulletin.category);
+        stringBuilder.append(", VALID_FROM=" + bulletin.validFrom);
+        stringBuilder.append(", VALID_TO=" + bulletin.validTo);
+        
+        if (bulletin.titles != null) {
+            List<String> titlesList = bulletin.titles.stream().map(t -> t.getLanguage() + ": "
+                    + t.getText()).collect(Collectors.toList());
+            
+            stringBuilder.append(", TITLES=" + titlesList);
+        }
+        
+        if (bulletin.descriptions != null) {
+            List<String> descriptionsList = bulletin.descriptions.stream().map(t -> t.getLanguage() + ": "
+                    + t.getText()).collect(Collectors.toList());
+            
+            stringBuilder.append(", DESCRIPTIONS=" + descriptionsList);
+        }
+        
+        return stringBuilder.toString();
     }
 
     static List<InternalMessages.Bulletin.Translation> parseTitles(ResultSet resultSet) throws SQLException {
