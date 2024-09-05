@@ -92,6 +92,8 @@ public class BulletinDAOImpl extends DAOImplBase implements BulletinDAO {
         stringBuilder.append(", CATEGORY=" + bulletin.category);
         stringBuilder.append(", VALID_FROM=" + bulletin.validFrom);
         stringBuilder.append(", VALID_TO=" + bulletin.validTo);
+        stringBuilder.append(", AFFECTED_LINE_GIDS=" + bulletin.affectedLineGids);
+        stringBuilder.append(", AFFECTED_STOP_GIDS=" + bulletin.affectedStopGids);
         
         if (bulletin.titles != null) {
             List<String> titlesList = bulletin.titles.stream().map(t -> t.getLanguage() + ": "
