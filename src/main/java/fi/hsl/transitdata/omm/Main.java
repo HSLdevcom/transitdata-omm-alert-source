@@ -28,8 +28,9 @@ public class Main {
             final String connectionString = readConnectionString();
             final int pollIntervalInSeconds = config.getInt("omm.interval");
             log.info("Starting omm alert source with poll interval (s): {}", pollIntervalInSeconds);
-            final String databaseSchema = config.getString("omm.databaseSchema");
-            final boolean pubtransDev = config.getBoolean("pubtrans.devDatabase");
+            final String databaseSchema = System.getenv("OMM_DATABASE_SCHEMA");
+            final String pubtransDevString = System.getenv("PUBTRANS_DEV");
+            final boolean pubtransDev = Boolean.parseBoolean(pubtransDevString);
 
             final PulsarApplication app = PulsarApplication.newInstance(config);
             final OmmDbConnector omm = new OmmDbConnector(
@@ -68,11 +69,7 @@ public class Main {
     private static String readConnectionString() throws Exception {
         String connectionString = "";
         try {
-            //Default path is what works with Docker out-of-the-box. Override with a local file if needed
-            final String secretFilePath = ConfigUtils.getEnv("FILEPATH_CONNECTION_STRING")
-                                                     .orElse("/run/secrets/db_conn_string");
-            connectionString = new Scanner(new File(secretFilePath))
-                    .useDelimiter("\\Z").next();
+            connectionString = System.getenv("TRANSITDATA_PUBTRANS_CONN_STRING");
         } catch (Exception e) {
             log.error("Failed to read DB connection string from secrets", e);
             throw e;

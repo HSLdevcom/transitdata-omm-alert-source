@@ -40,7 +40,9 @@ public class Bulletin {
         POWER_FAILURE,
         STAFF_DEFICIT,
         DISTURBANCE,
-        VEHICLE_DEFICIT;
+        VEHICLE_DEFICIT,
+        NO_DRIVER,
+        CHARGING_SERVICE;
 
         public static Category fromString(String str) {
             switch (str) {
@@ -76,6 +78,9 @@ public class Bulletin {
                 case "STAFF_DEFICIT": return STAFF_DEFICIT;
                 case "DISTURBANCE": return DISTURBANCE;
                 case "VEHICLE_DEFICIT": return VEHICLE_DEFICIT;
+                case "NO_DRIVER": return NO_DRIVER;
+                case "CHARGING_SERVICE": return CHARGING_SERVICE;
+                
                 default: throw new IllegalArgumentException("Could not parse category from String: " + str);
             }
         }

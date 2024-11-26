@@ -14,6 +14,8 @@ SELECT
     JOIN [ptDOI4].[dbo].[ObjectType] AS OT ON OT.Number = KT.ExtendsObjectTypeNumber
 
 	WHERE KT.Name = 'RouteName'
+    AND DOL.ExistsFromDate <= GETDATE()
+    AND (DOL.ExistsUptoDate > GETDATE() or DOL.ExistsUptoDate is null )
 
 	GROUP BY L.Gid, KVV.StringValue, DOL.ExistsFromDate, DOL.ExistsUptoDate
 	ORDER BY L.Gid DESC;
