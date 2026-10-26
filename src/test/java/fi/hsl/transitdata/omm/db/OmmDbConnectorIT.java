@@ -14,7 +14,7 @@ import org.junit.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
-public class OmmDbConnectorTest {
+public class OmmDbConnectorIT {
     private static final String DB_PASSWORD = "Test4321";
 
     @Rule
