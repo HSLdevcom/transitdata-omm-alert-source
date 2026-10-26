@@ -14,68 +14,63 @@ import org.slf4j.LoggerFactory;
 
 public class Main {
 
-  private static final Logger log = LoggerFactory.getLogger(Main.class);
+    private static final Logger log = LoggerFactory.getLogger(Main.class);
 
-  public static void main(String[] args) {
+    public static void main(String[] args) {
 
-    try {
-      final Config config = ConfigParser.createConfig();
-      final String connectionString = readConnectionString();
-      final int pollIntervalInSeconds = config.getInt("omm.interval");
-      log.info("Starting omm alert source with poll interval (s): {}", pollIntervalInSeconds);
-      final String databaseSchema = System.getenv("OMM_DATABASE_SCHEMA");
-      final String pubtransDevString = System.getenv("PUBTRANS_DEV");
-      final boolean pubtransDev = Boolean.parseBoolean(pubtransDevString);
+        try {
+            final Config config = ConfigParser.createConfig();
+            final String connectionString = readConnectionString();
+            final int pollIntervalInSeconds = config.getInt("omm.interval");
+            log.info("Starting omm alert source with poll interval (s): {}", pollIntervalInSeconds);
+            final String databaseSchema = System.getenv("OMM_DATABASE_SCHEMA");
+            final String pubtransDevString = System.getenv("PUBTRANS_DEV");
+            final boolean pubtransDev = Boolean.parseBoolean(pubtransDevString);
 
-      final PulsarApplication app = PulsarApplication.newInstance(config);
-      final OmmDbConnector omm =
-          new OmmDbConnector(
-              config, pollIntervalInSeconds, connectionString, databaseSchema, pubtransDev);
-      final OmmAlertHandler alerter = new OmmAlertHandler(app.getContext(), omm);
+            final PulsarApplication app = PulsarApplication.newInstance(config);
+            final OmmDbConnector omm = new OmmDbConnector(config, pollIntervalInSeconds, connectionString,
+                    databaseSchema, pubtransDev);
+            final OmmAlertHandler alerter = new OmmAlertHandler(app.getContext(), omm);
 
-      final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-      scheduler.scheduleAtFixedRate(
-          () -> {
-            try {
-              alerter.pollAndSend();
-            } catch (PulsarClientException e) {
-              log.error("Pulsar connection error", e);
-              closeApplication(app, scheduler);
-            } catch (SQLException e) {
-              log.error("SQL exception", e);
-              closeApplication(app, scheduler);
-            } catch (Exception e) {
-              log.error("Unknown exception at poll cycle: ", e);
-              closeApplication(app, scheduler);
-            }
-          },
-          0,
-          pollIntervalInSeconds,
-          TimeUnit.SECONDS);
+            final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+            scheduler.scheduleAtFixedRate(() -> {
+                try {
+                    alerter.pollAndSend();
+                } catch (PulsarClientException e) {
+                    log.error("Pulsar connection error", e);
+                    closeApplication(app, scheduler);
+                } catch (SQLException e) {
+                    log.error("SQL exception", e);
+                    closeApplication(app, scheduler);
+                } catch (Exception e) {
+                    log.error("Unknown exception at poll cycle: ", e);
+                    closeApplication(app, scheduler);
+                }
+            }, 0, pollIntervalInSeconds, TimeUnit.SECONDS);
 
-    } catch (Exception e) {
-      log.error("Exception at Main: " + e.getMessage(), e);
-    }
-  }
-
-  private static void closeApplication(PulsarApplication app, ScheduledExecutorService scheduler) {
-    log.warn("Closing application");
-    scheduler.shutdown();
-    app.close();
-  }
-
-  private static String readConnectionString() throws Exception {
-    String connectionString = "";
-    try {
-      connectionString = System.getenv("TRANSITDATA_PUBTRANS_CONN_STRING");
-    } catch (Exception e) {
-      log.error("Failed to read DB connection string from secrets", e);
-      throw e;
+        } catch (Exception e) {
+            log.error("Exception at Main: " + e.getMessage(), e);
+        }
     }
 
-    if (connectionString.isEmpty()) {
-      throw new Exception("Failed to find DB connection string, exiting application");
+    private static void closeApplication(PulsarApplication app, ScheduledExecutorService scheduler) {
+        log.warn("Closing application");
+        scheduler.shutdown();
+        app.close();
     }
-    return connectionString;
-  }
+
+    private static String readConnectionString() throws Exception {
+        String connectionString = "";
+        try {
+            connectionString = System.getenv("TRANSITDATA_PUBTRANS_CONN_STRING");
+        } catch (Exception e) {
+            log.error("Failed to read DB connection string from secrets", e);
+            throw e;
+        }
+
+        if (connectionString.isEmpty()) {
+            throw new Exception("Failed to find DB connection string, exiting application");
+        }
+        return connectionString;
+    }
 }

@@ -15,59 +15,59 @@ import org.slf4j.LoggerFactory;
 
 public class LineDAOImpl extends DAOImplBase implements LineDAO {
 
-  private static final Logger log = LoggerFactory.getLogger(LineDAOImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(LineDAOImpl.class);
 
-  String queryString;
-  boolean pubtransDev;
+    String queryString;
+    boolean pubtransDev;
 
-  public LineDAOImpl(Connection connection, boolean pubtransDev) {
-    super(connection);
-    this.pubtransDev = pubtransDev;
-    queryString = createQuery();
-  }
-
-  @Override
-  public Map<Long, Line> getAllLines() throws SQLException {
-    try (PreparedStatement statement = connection.prepareStatement(queryString)) {
-      log.info("Querying lines");
-      ResultSet results = performQuery(statement);
-      return parseLines(results);
-    } catch (Exception e) {
-      log.error("Error while  querying and processing Lines", e);
-      throw e;
+    public LineDAOImpl(Connection connection, boolean pubtransDev) {
+        super(connection);
+        this.pubtransDev = pubtransDev;
+        queryString = createQuery();
     }
-  }
 
-  private Map<Long, Line> parseLines(ResultSet resultSet) throws SQLException {
-    Map<Long, Line> lines = new HashMap<>();
-    while (resultSet.next()) {
-      long lineGid = resultSet.getLong("Gid");
-      String routeId = resultSet.getString("StringValue");
-      String existsFromDate = resultSet.getString("ExistsFromDate");
-      String existsUptoDate = resultSet.getString("ExistsUptoDate");
-      Route route = new Route(lineGid, routeId, existsFromDate, existsUptoDate);
-      Line line;
-      if (lines.containsKey(lineGid)) {
-        line = lines.get(lineGid);
-      } else {
-        line = new Line(lineGid);
-        lines.put(line.gid, line);
-      }
-      line.addRouteToLine(route);
+    @Override
+    public Map<Long, Line> getAllLines() throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(queryString)) {
+            log.info("Querying lines");
+            ResultSet results = performQuery(statement);
+            return parseLines(results);
+        } catch (Exception e) {
+            log.error("Error while  querying and processing Lines", e);
+            throw e;
+        }
     }
-    log.info("Parsed {} lines", lines.size());
-    return lines;
-  }
 
-  private String createQuery() {
-    String sqlFile = pubtransDev ? "/routes_all_dev.sql" : "/routes_all.sql";
-    log.info("Using SQL file '{}'", sqlFile);
-    InputStream stream = getClass().getResourceAsStream(sqlFile);
-    try {
-      return FileUtils.readFileFromStreamOrThrow(stream);
-    } catch (Exception e) {
-      log.error("Error in reading sql from file:", e);
-      return null;
+    private Map<Long, Line> parseLines(ResultSet resultSet) throws SQLException {
+        Map<Long, Line> lines = new HashMap<>();
+        while (resultSet.next()) {
+            long lineGid = resultSet.getLong("Gid");
+            String routeId = resultSet.getString("StringValue");
+            String existsFromDate = resultSet.getString("ExistsFromDate");
+            String existsUptoDate = resultSet.getString("ExistsUptoDate");
+            Route route = new Route(lineGid, routeId, existsFromDate, existsUptoDate);
+            Line line;
+            if (lines.containsKey(lineGid)) {
+                line = lines.get(lineGid);
+            } else {
+                line = new Line(lineGid);
+                lines.put(line.gid, line);
+            }
+            line.addRouteToLine(route);
+        }
+        log.info("Parsed {} lines", lines.size());
+        return lines;
     }
-  }
+
+    private String createQuery() {
+        String sqlFile = pubtransDev ? "/routes_all_dev.sql" : "/routes_all.sql";
+        log.info("Using SQL file '{}'", sqlFile);
+        InputStream stream = getClass().getResourceAsStream(sqlFile);
+        try {
+            return FileUtils.readFileFromStreamOrThrow(stream);
+        } catch (Exception e) {
+            log.error("Error in reading sql from file:", e);
+            return null;
+        }
+    }
 }

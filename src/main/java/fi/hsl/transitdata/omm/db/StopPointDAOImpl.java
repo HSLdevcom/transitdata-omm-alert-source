@@ -13,57 +13,57 @@ import org.slf4j.LoggerFactory;
 
 public class StopPointDAOImpl extends DAOImplBase implements StopPointDAO {
 
-  private static final Logger log = LoggerFactory.getLogger(StopPointDAOImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(StopPointDAOImpl.class);
 
-  String queryString;
-  String timezone;
+    String queryString;
+    String timezone;
 
-  boolean pubtransDev;
+    boolean pubtransDev;
 
-  public StopPointDAOImpl(Connection connection, String timezone, boolean pubtransDev) {
-    super(connection);
-    this.pubtransDev = pubtransDev;
-    queryString = createQuery();
-    this.timezone = timezone;
-  }
-
-  @Override
-  public Map<Long, List<StopPoint>> getAllStopPoints() throws SQLException {
-    try (PreparedStatement statement = connection.prepareStatement(queryString)) {
-      ResultSet results = performQuery(statement);
-      return parseStopPoints(results);
-    } catch (Exception e) {
-      log.error("Error while  querying and processing StopPoints", e);
-      throw e;
+    public StopPointDAOImpl(Connection connection, String timezone, boolean pubtransDev) {
+        super(connection);
+        this.pubtransDev = pubtransDev;
+        queryString = createQuery();
+        this.timezone = timezone;
     }
-  }
 
-  private Map<Long, List<StopPoint>> parseStopPoints(ResultSet resultSet) throws SQLException {
-    Map<Long, List<StopPoint>> stopPointsMap = new HashMap<>();
-    while (resultSet.next()) {
-      long stopGid = resultSet.getLong("Gid");
-      String stopId = resultSet.getString("Number");
-      String existsFromDate = resultSet.getString("ExistsFromDate");
-      String existsUptoDate = resultSet.getString("ExistsUptoDate");
-      StopPoint stopPoint = new StopPoint(stopGid, stopId, existsFromDate, existsUptoDate);
-      // there may be multiple stopPoints with same gid
-      if (!stopPointsMap.containsKey(stopGid)) {
-        stopPointsMap.put(stopGid, new ArrayList<StopPoint>());
-      }
-      stopPointsMap.get(stopGid).add(stopPoint);
+    @Override
+    public Map<Long, List<StopPoint>> getAllStopPoints() throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(queryString)) {
+            ResultSet results = performQuery(statement);
+            return parseStopPoints(results);
+        } catch (Exception e) {
+            log.error("Error while  querying and processing StopPoints", e);
+            throw e;
+        }
     }
-    return stopPointsMap;
-  }
 
-  private String createQuery() {
-    String sqlFile = pubtransDev ? "/stop_points_all_dev.sql" : "/stop_points_all.sql";
-    log.info("Using SQL file '{}'", sqlFile);
-    InputStream stream = getClass().getResourceAsStream(sqlFile);
-    try {
-      return FileUtils.readFileFromStreamOrThrow(stream);
-    } catch (Exception e) {
-      log.error("Error in reading sql from file:", e);
-      return null;
+    private Map<Long, List<StopPoint>> parseStopPoints(ResultSet resultSet) throws SQLException {
+        Map<Long, List<StopPoint>> stopPointsMap = new HashMap<>();
+        while (resultSet.next()) {
+            long stopGid = resultSet.getLong("Gid");
+            String stopId = resultSet.getString("Number");
+            String existsFromDate = resultSet.getString("ExistsFromDate");
+            String existsUptoDate = resultSet.getString("ExistsUptoDate");
+            StopPoint stopPoint = new StopPoint(stopGid, stopId, existsFromDate, existsUptoDate);
+            // there may be multiple stopPoints with same gid
+            if (!stopPointsMap.containsKey(stopGid)) {
+                stopPointsMap.put(stopGid, new ArrayList<StopPoint>());
+            }
+            stopPointsMap.get(stopGid).add(stopPoint);
+        }
+        return stopPointsMap;
     }
-  }
+
+    private String createQuery() {
+        String sqlFile = pubtransDev ? "/stop_points_all_dev.sql" : "/stop_points_all.sql";
+        log.info("Using SQL file '{}'", sqlFile);
+        InputStream stream = getClass().getResourceAsStream(sqlFile);
+        try {
+            return FileUtils.readFileFromStreamOrThrow(stream);
+        } catch (Exception e) {
+            log.error("Error in reading sql from file:", e);
+            return null;
+        }
+    }
 }

@@ -5,5 +5,5 @@ import java.sql.SQLException;
 import java.util.List;
 
 public interface BulletinDAO {
-  List<Bulletin> getActiveBulletins() throws SQLException;
+    List<Bulletin> getActiveBulletins() throws SQLException;
 }

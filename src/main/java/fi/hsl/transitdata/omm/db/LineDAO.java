@@ -5,5 +5,5 @@ import java.sql.SQLException;
 import java.util.Map;
 
 public interface LineDAO {
-  Map<Long, Line> getAllLines() throws SQLException;
+    Map<Long, Line> getAllLines() throws SQLException;
 }

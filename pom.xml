@@ -16,8 +16,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>25</maven.compiler.release>
         <common.version>3.0.0</common.version>
-        <spotlessMavenPlugin.version>2.43.0</spotlessMavenPlugin.version>
-        <googleJavaFormat.version>1.23.0</googleJavaFormat.version>
+        <spotlessMavenPlugin.version>3.10.4</spotlessMavenPlugin.version>
     </properties>
 
     <dependencyManagement>
@@ -113,9 +112,9 @@
                 <version>${spotlessMavenPlugin.version}</version>
                 <configuration>
                     <java>
-                        <googleJavaFormat>
-                            <version>${googleJavaFormat.version}</version>
-                        </googleJavaFormat>
+                        <eclipse>
+                            <file>${project.basedir}/eclipse-java-formatter.xml</file>
+                        </eclipse>
                     </java>
                 </configuration>
             </plugin>
