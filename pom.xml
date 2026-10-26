@@ -16,6 +16,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>25</maven.compiler.release>
         <common.version>3.0.0</common.version>
+        <mockito.version>5.24.0</mockito.version>
         <spotlessMavenPlugin.version>3.10.4</spotlessMavenPlugin.version>
     </properties>
 
@@ -52,7 +53,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>5.1.1</version>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
