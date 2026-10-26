@@ -1,5 +1,4 @@
-[![Test and create Docker image](https://github.com/HSLdevcom/transitdata-omm-alert-source/actions/workflows/test-and-build.yml/badge.svg)](https://github.com/HSLdevcom/transitdata-omm-alert-source/actions/workflows/test-and-build.yml) master  
-[![Test and create Docker image](https://github.com/HSLdevcom/transitdata-omm-alert-source/actions/workflows/test-and-build.yml/badge.svg?branch=develop)](https://github.com/HSLdevcom/transitdata-omm-alert-source/actions/workflows/test-and-build.yml) develop
+[![CI/CD](https://github.com/HSLdevcom/transitdata-omm-alert-source/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/HSLdevcom/transitdata-omm-alert-source/actions/workflows/ci-cd.yml)
 
 # Transitdata-omm-alert-source
 
@@ -17,12 +16,12 @@ This project depends on [transitdata-common](https://github.com/HSLdevcom/transi
 
 ### Locally
 
-- ```mvn compile```  
-- ```mvn package```  
+- ```./mvnw compile test```
+- ```./mvnw package```
 
 ### Docker image
 
-- Run [this script](build-image.sh) to build the Docker image
+- Run [this script](build-image.sh) to build the Docker image.
 
 
 ## Running
